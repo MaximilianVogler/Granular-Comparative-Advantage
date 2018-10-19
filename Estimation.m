@@ -5,7 +5,7 @@ clc;
 
 tstart0 = tic
 
-%% Set up of model
+%% Setup of model
 
 % Initialize random number generator and set seed
 aseed = 1;
@@ -129,6 +129,40 @@ sigmaT_grid = sigmaT_vec(index(:,2));
 tau_grid = tau_vec(index(:,3));
 kappa_grid = kappa_vec(index(:,4));
 f_grid = f_vec(index(:,5));
+
+parfor i = 1:NumGrid
+    
+    muT=muT_grid(i);
+    sigmaT=sigmaT_grid(i);
+    tau=tau_grid(i);
+    kappa=kappa_grid(i);
+    f=f_grid(i);
+    
+    theta=(SIGMA-1)*kappa;
+    sigma=SIGMA;
+    
+    Paramarray(i,:)=[muT sigmaT tau kappa f];
+    
+    % What is going on here?
+    F=f/sigma;
+    
+    % Given mu_T and sigma_T draw sectoral productivity T_z for each sector z (step 1 of estimation procedure)
+    RT=exp(muT+sigmaT*rtdraws);
+    RTS=RT(small);
+    RTL=RT(~small);
+    
+    % Draw productivities phi (step 2 of estimation procedure)
+    ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1/theta);
+    ZFS=UFS.^(-1/theta);
+    ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1/theta);
+    ZFL=UFL.^(-1/theta);
+    
+    % Guess for home and foreign output Y
+    Y0=123;
+    YF0=2*Y0;
+    
+    tstart=tic
+end
 
 
                                                    
