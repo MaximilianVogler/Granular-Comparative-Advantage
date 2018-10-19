@@ -157,14 +157,24 @@ parfor i = 1:NumGrid
     ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1/theta);
     ZFL=UFL.^(-1/theta);
     
-    % Guess for home and foreign output Y
+    % Guess home and foreign output Y
     Y0=123;
     YF0=2*Y0;
     
     tstart=tic
+    
+    % Run loops to solve model (step 3 of estimation procedure)
+    [Y,YF,~]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,vMU,BER);
+    
+    % Compute 15 target moments
+    [Momarray(i,:)]=PEmoments_vectorized_new_extra_v2(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,vMU,BER);
+    
+    time=toc(tstart)
 end
 
+toc(tstart0)
 
-                                                   
+% Need to understand why we need this
+Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
-
+save('estimation_seed1_grid5','Momarray','Paramarray')                                                 
