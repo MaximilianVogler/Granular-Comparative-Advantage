@@ -1,4 +1,4 @@
-function [ ALPHA,RT,ZHS,ZFS,ZHL,ZFL ] = MCgenerate_vectorized(S,MH_small,MF_small,MH_large,MF_large,theta,muT,sigmaT)
+function [ ALPHA,RT,ZHS,ZFS,ZHL,ZFL ] = MCgenerate_vectorized(MH_small,MF_small,MH_large,MF_large,theta,muT,sigmaT)
 % This code generates productivity parameters as in step 1 and 2 of the
 % algorithm.
 split_param=1.25;   % This determines the split between small and large sectors.
