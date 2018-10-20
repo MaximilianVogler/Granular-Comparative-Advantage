@@ -1,3 +1,6 @@
+% This code performs the estimation routine as outline in the appendix,
+% steps 1-3.
+
 %% Housekeeping
 clear all;
 close all;
@@ -47,6 +50,7 @@ Nsmall = sum(small);
 Nlarge = S-Nsmall;
 
 % Make random draws for loop
+rng(aseed);                                               % Reset random number generator for consistency with old code
 rtdraws = randn(1,S);
 
 UH0S = exprnd(1,MH_small,Nsmall);                         % Draw U of most productive small home shadow firm and spacings in each sector from exponential with mean 1
