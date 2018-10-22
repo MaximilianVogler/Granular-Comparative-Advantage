@@ -1,4 +1,4 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER)
+function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,DSHM,XS,YXS] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER)
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -145,5 +145,11 @@ MUHVEC=sum((1-IOTAH).*SHM./MUHM);
 MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           % Careful!!! Need to check whether this is true.
 LAMBDAHVEC=sum(IOTAH.*SHM); % realized import share vector in home
 LAMBDAFVEC=sum(IOTAF.*SFM);
+
+% Auxiliary variables for moments
+KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector
+DSHM = SHM.*checkmatH.*(1-IOTAH);    % Share on the home market relative to other domestic firms (equation 17)
+XS = sum(IOTAF.*SFM);
+YXS = 1-sum(IOTAH.*SHM);
 
 end

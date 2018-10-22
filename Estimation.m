@@ -170,10 +170,10 @@ parfor i = 1:NumGrid
     tstart=tic
     
     % Run loops to solve model (step 3 of estimation procedure)
-    [Y,YF,~]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
+    [Y,YF,~,KHH,DSHM,XS,YXS,LAMBDAHVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
     
     % Compute 15 target moments
-    [Momarray(i,:)]=PEmoments_vectorized_new_extra_v2(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,small,vMU,BER);
+    [Momarray(i,:)]=Moments(KHH,DSHM,LAMBDAHVEC,XS,YXS,ALPHA,Y,YF);   
     
     time=toc(tstart)
 end

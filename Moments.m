@@ -1,10 +1,8 @@
-function [mom] = Moments(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,small,vMU,BER)
+function [mom] = Moments(KHH,DSHM,LAMBDAHVEC,XS,YXS,ALPHA,Y,YF)
 % This function computes the 15 target moments required for estimation.
 
-KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector
 mom(1:2) = moment_stats(log(KHH));       % Mean and standard deviation of home firms active in home.
 
-DSHM = SHM.*checkmatH.*(1-IOTAH);    % Share on the home market relative to other domestic firms (equation 17)
 DSHM = sort(DSHM,'descend');
 DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share really realtive NEED TO TEST!!!
 TOP1 = DSHM(1,:);
@@ -17,13 +15,12 @@ mom(7:8) = moment_stats(LAMBDAHVEC);
 
 % Import share in foreign, i.e. share of home exports in foreign for each
 % sector (vector)
-XS = sum(IOTAF.*SFM);
 
 % Total Exports for each sector
 X = ALPHA'.*YF.*XS;
 
 % Domestic sales for each sector
-YX = ALPHA'.*Y.*(1-sum(IOTAH.*SHM));
+YX = ALPHA'.*Y.*YXS;
 
 LAMBDAPRIME = LAMBDAFVEC*Y/YF;
 mom(9:10) = moment_stats(LAMBDAPRIME);
