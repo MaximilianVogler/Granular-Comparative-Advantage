@@ -49,9 +49,6 @@ small = (ALPHA<split_param/S);
 Nsmall = sum(small);                           
 Nlarge = S-Nsmall;
 
-ALPHAS = ALPHA(small);
-ALPHAL = ALPHA(~small);
-
 % Make random draws for loop
 rng(aseed);                                               % Reset random number generator for consistency with old code
 rtdraws = randn(1,S);
@@ -176,7 +173,7 @@ parfor i = 1:NumGrid
     [Y,YF,~]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
     
     % Compute 15 target moments
-    [Momarray(i,:)]=PEmoments_vectorized_new_extra_v2(sigma,theta,F,tau,ALPHAS,ALPHAL,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,small,vMU,BER);
+    [Momarray(i,:)]=PEmoments_vectorized_new_extra_v2(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,small,vMU,BER);
     
     time=toc(tstart)
 end

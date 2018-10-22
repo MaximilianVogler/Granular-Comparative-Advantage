@@ -139,8 +139,10 @@ KVEC=sum(checkmatH); % vector of number of firms that enter in home
 KFVEC=sum(checkmatF);
 PHIHVEC=1./(1+(tau*wF/w)^theta.*RT); % expected import share vector in home
 PHIFVEC=1./(1+(tau*w/wF)^theta./RT);
-MUHVEC=sum(SHM./MUHM); % average inverse markup vector in home
-MUFVEC=sum(SFM./MUFM);
+%MUHVEC=sum(SHM./MUHM); % average inverse markup vector in home
+%MUFVEC=sum(SFM./MUFM);
+MUHVEC=sum((1-IOTAH).*SHM./MUHM);
+MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           % Careful!!! Need to check whether this is true.
 LAMBDAHVEC=sum(IOTAH.*SHM); % realized import share vector in home
 LAMBDAFVEC=sum(IOTAF.*SFM);
 
