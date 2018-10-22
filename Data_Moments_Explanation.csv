@@ -1,0 +1,15 @@
+5.6311207,,Mean of log number of firms
+1.4510791,,Standard Deviation of log number of firms
+0.19651957,,Mean of Top-firm sales share
+0.1776062,,Standard Deviation of Top-firm sales share
+0.35631633,,Mean of Top-3 sales share
+0.24122334,,Standard Deviation of Top-3 sales share
+0.36534441,,Mean of Imports/dom. Sales
+0.20429817,,Standard Deviation of Imports/dom. Sales
+0.32830328,,Mean of Exports/dom. Sales
+0.28636786,,Standard Deviation of Exports/dom. Sales
+0.18487395,,Fraction of sectors with exports>domestic Sales
+0.215,,export share on top-firm share
+0.254,,export share on top-3 share
+-0.016,,import share on top-firm share
+0.002,,export share on top-3 share

@@ -49,6 +49,9 @@ small = (ALPHA<split_param/S);
 Nsmall = sum(small);                           
 Nlarge = S-Nsmall;
 
+ALPHAS = ALPHA(small);
+ALPHAL = ALPHA(~small);
+
 % Make random draws for loop
 rng(aseed);                                               % Reset random number generator for consistency with old code
 rtdraws = randn(1,S);
@@ -156,9 +159,11 @@ parfor i = 1:NumGrid
     RTL=RT(~small);
     
     % Draw productivities phi (step 2 of estimation procedure)
-    ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1/theta);
+    % ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1/theta);                         % TEST!!!
+    ZHS=(UHS./(repmat(RTS,MH_small,1))).^(-1/theta);
     ZFS=UFS.^(-1/theta);
-    ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1/theta);
+    % ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1/theta);
+    ZHL=(UHL./(repmat(RTL,MH_large,1))).^(-1/theta);                         % TEST!!!
     ZFL=UFL.^(-1/theta);
     
     % Guess home and foreign output Y
@@ -168,10 +173,10 @@ parfor i = 1:NumGrid
     tstart=tic
     
     % Run loops to solve model (step 3 of estimation procedure)
-    [Y,YF,~]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,vMU,BER);
+    [Y,YF,~]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
     
     % Compute 15 target moments
-    [Momarray(i,:)]=PEmoments_vectorized_new_extra_v2(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,vMU,BER);
+    [Momarray(i,:)]=PEmoments_vectorized_new_extra_v2(sigma,theta,F,tau,ALPHAS,ALPHAL,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,L0,small,vMU,BER);
     
     time=toc(tstart)
 end
