@@ -82,8 +82,8 @@ wF = 1/wR;
 BER = 1;
 
 vMU=1;
-Y0 = 126.74;
-YF0 = Y0*1.526;
+Y0 = 126.7506707854941;
+YF0 = 1.526*Y0;
 
 tol=1e-2; % set tolerance level for A-B loop
 

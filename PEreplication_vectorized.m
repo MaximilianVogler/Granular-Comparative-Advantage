@@ -28,15 +28,15 @@ YXS=zeros(1,S);
 [KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),KHH(~small),TOP1(~small),TOP3(~small),XS(~small),YXS(~small)]=...
     Inner_Loops(sigma,theta,F,tau,ALPHAL',RTL,ZHL,ZFL,w,wF,Y0,YF0,vMU,BER);
 
-% Take averages of vectors to obtain aggregates       CAREFUL!!! CORRECT???
+%Take averages of vectors to obtain aggregates       
 % K=mean(KVEC); % number of firms in home
 % KF=mean(KFVEC);
 % PHI=mean(PHIHVEC); % expected import share in home
 % PHIF=mean(PHIFVEC);
 % LAMBDA=mean(LAMBDAHVEC); % realized import share in home
 % LAMBDAF=mean(LAMBDAFVEC);
-% MU=1./sum(ALPHA.*MUHVEC); % aggregate markup in home
-% MUF=1./sum(ALPHA.*MUFVEC);
+% MU=1./sum(ALPHA'.*MUHVEC); % aggregate markup in home
+% MUF=1./sum(ALPHA'.*MUFVEC);
 
 K=sum(KVEC);            % number of firms in home
 KF=sum(KFVEC);
