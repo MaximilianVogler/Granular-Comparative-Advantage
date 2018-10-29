@@ -1,4 +1,4 @@
-function [Y,YF,LF,KHH,DSHM,XS,YXS,LAMBDAHVEC] = GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L,Y0,YF0,small,vMU,BER)
+function [Y,YF,LF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC] = GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L,Y0,YF0,small,vMU,BER)
 % Matrix code to compute GE with w/w* fixed. Takes parameters, random draws, 
 % and initial guess as inputs. Outputs GE values of Y, Y*, L*.
 
@@ -9,7 +9,7 @@ iter=0;
 tic
 while diff>tol && iter<51
     % Solve PE
-    [K,KF,~,~,LAMBDA,LAMBDAF,MU,MUF,KHH,DSHM,XS,YXS,LAMBDAHVEC]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y0,YF0,small,vMU,BER);
+    [K,KF,~,~,LAMBDA,LAMBDAF,MU,MUF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y0,YF0,small,vMU,BER);
     
     % Set up linear system composed of (A10) and (A14)
     MAT=[(1-LAMBDA)*(MU-1)/MU-1 LAMBDAF*(MUF-1)/MUF;LAMBDA -LAMBDAF];

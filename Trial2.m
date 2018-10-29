@@ -1,4 +1,89 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER)
+% Testing Inner Loops
+
+clear all;
+close all;
+clc;
+
+sigma = 5;
+theta = 4.306666666666667;
+F = 0.945561052525253*10^(-5);
+tau = 1.340707070707071;
+
+
+aseed=1;
+
+MF_large=10000;
+MF_small=1400;
+MH_large=5000;
+MH_small=700;
+% Compute number of sectors 
+cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
+
+S_multiple = 4;                                         
+S_init = length(cdshares_init);                         % Number of sectors in data
+S = S_init*S_multiple;                                  % Number of sectors used (see footnote 56)
+
+% Assign CD-shares across sectors 
+ALPHA = cdshares_init;      
+
+for iloop = 1:S_multiple-1;
+    ALPHA = [ALPHA;cdshares_init(randperm(S_init))];
+end
+ALPHA = ALPHA/S_multiple;
+
+% Split sectors into large and small based on CD-share.
+split_param = 1.25;
+small = (ALPHA<split_param/S);                            
+Nsmall = sum(small);                           
+Nlarge = S-Nsmall;
+
+ALPHA = ALPHA(small)';
+
+% Make random draws for loop
+rng(aseed);                                               % Reset random number generator for consistency with old code
+rtdraws = randn(1,S);
+
+UH0S = exprnd(1,MH_small,Nsmall);                         % Draw U of most productive small home shadow firm and spacings in each sector from exponential with mean 1
+UF0S = exprnd(1,MF_small,Nsmall);                        
+UHS = cumsum(UH0S);                                       % Cumulate to get U of each home firm in each sector (see footnote 57)
+UFS = cumsum(UF0S);
+
+UH0L = exprnd(1,MH_large,Nlarge);
+UF0L = exprnd(1,MF_large,Nlarge);
+UHL = cumsum(UH0L);
+UFL = cumsum(UF0L);
+
+% Fix sigma
+SIGMA = 5;
+
+% Labor Normalization
+L0 = 100;
+
+% Input parameters
+muT = 0.136767676767677;
+sigmaT = 1.421717171717172;
+
+RT=exp(muT+sigmaT*rtdraws);
+RT=RT(small);
+RTS=RT;
+
+    ZHS=(UHS./(repmat(RTS,MH_small,1))).^(-1/theta);
+    ZFS=UFS.^(-1/theta);
+    
+    ZH=ZHS;
+    ZF=ZFS;
+    
+    
+    wR = 1.13;      
+w = 1;          
+wF = 1/wR; 
+
+
+BER = 1;
+
+vMU=1;
+Y0 = 126.74;
+YF0 = Y0*1.526;
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -150,12 +235,8 @@ LAMBDAFVEC=sum(IOTAF.*SFM);
 KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector
 DSHM = SHM.*checkmatH.*(1-IOTAH);    % Share on the home market relative to other domestic firms (equation 17)
 DSHM = sort(DSHM,'descend');
-%DSHM = DSHM(DSHM>0);
 DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share relative     NEED TO TEST!!!
 TOP1 = DSHM(1,:);
 %TOP1 = TOP1(TOP1>0);
-TOP3 = sum(DSHM(1:3,:));
 XS = sum(IOTAF.*SFM);
 YXS = 1-sum(IOTAH.*SHM);
-
-end

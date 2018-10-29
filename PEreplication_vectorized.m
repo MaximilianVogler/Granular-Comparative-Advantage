@@ -1,4 +1,4 @@
-function [K,KF,PHI,PHIF,LAMBDA,LAMBDAF,MU,MUF,KHH,DSHM,XS,YXS,LAMBDAHVEC] = PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y0,YF0,small,vMU,BER)
+function [K,KF,PHI,PHIF,LAMBDA,LAMBDAF,MU,MUF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC] = PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y0,YF0,small,vMU,BER)
 % Takes parameters, random draws, and initial guess as inputs. Outputs are
 % K, Lambda, and aggregate markup Mu in both countries. 
 
@@ -17,15 +17,16 @@ KFVEC=zeros(1,S);
 LAMBDAHVEC=zeros(1,S);
 LAMBDAFVEC=zeros(1,S); 
 KHH=zeros(1,S);
-DSHM=zeros(1,S);
+TOP1=zeros(1,S);
+TOP3=zeros(1,S);
 XS=zeros(1,S);
 YXS=zeros(1,S);
 
 % Solve inner loops separately for small and large sectors (for speed)
-[KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),KHH(small),DSHM(small),XS(small),YXS(small)]=...
+[KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),KHH(small),TOP1(small),TOP3(small),XS(small),YXS(small)]=...
     Inner_Loops(sigma,theta,F,tau,ALPHAS',RTS,ZHS,ZFS,w,wF,Y0,YF0,vMU,BER);
-[KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAHVEC(~small),KHH(~small),DSHM(~small),XS(~small),YXS(~small)]=...
-    Inner_Loops(sigma,theta,F,tau,ALPHAL',RTL,ZHL,ZFL,w,wF,Z0,YF0,vMU,BER);
+[KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),KHH(~small),TOP1(~small),TOP3(~small),XS(~small),YXS(~small)]=...
+    Inner_Loops(sigma,theta,F,tau,ALPHAL',RTL,ZHL,ZFL,w,wF,Y0,YF0,vMU,BER);
 
 % Take averages of vectors to obtain aggregates       CAREFUL!!! CORRECT???
 % K=mean(KVEC); % number of firms in home
