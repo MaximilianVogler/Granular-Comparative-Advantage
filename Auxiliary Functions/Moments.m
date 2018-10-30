@@ -3,12 +3,8 @@ function [mom] = Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA,Y,YF)
 
 mom(1:2) = moment_stats(log(KHH(KHH>0)));       % Mean and standard deviation of home firms active in home.
 
-%DSHM = sort(DSHM,'descend');
-%DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share relative     NEED TO TEST!!!
-%TOP1 = DSHM(1,:);
 mom(3:4) = moment_stats(TOP1(TOP1>0));
 
-%TOP3 = sum(DSHM(1:3,:));
 mom(5:6) = moment_stats(TOP3(TOP3>0));
 
 mom(7:8) = moment_stats(LAMBDAHVEC(LAMBDAHVEC>0));
@@ -26,8 +22,6 @@ mom(9:10) = moment_stats(LAMBDAPRIME(LAMBDAPRIME>0));
 %mom(9:10) = moment_stats(XXX(XXX>0));
 
 mom(11) = mean(X>YX);
-
-% Regress Lambda on TOP1
 
 Control = log(1+ALPHA'.*Y.*(1-LAMBDAHVEC));
 

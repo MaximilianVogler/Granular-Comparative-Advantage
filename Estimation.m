@@ -1,4 +1,4 @@
-% This code performs the estimation routine as outline in the appendix,
+% This code performs the estimation routine as outlined in the appendix,
 % steps 1-3.
 
 %% Housekeeping
@@ -7,6 +7,9 @@ close all;
 clc;
 
 tstart0 = tic
+
+addpath('Data');
+addpath('Auxiliary Functions');
 
 %% Setup of model
 
@@ -26,7 +29,10 @@ w = 1;
 wF = 1/wR; 
 
 % Markups
-vMU=1;
+vMU = 1;
+
+% Competition Structure
+BER = 1;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -119,7 +125,7 @@ NumGrid = 20000;                                        % Number of estimation p
 p = haltonset(Nbparam);                                 % Set up Halton sequence that is choose which points you actually pick for estimation
 p0 = net(p,NumGrid);
 index = floor(p0*size_grid)+1;   % This index tells you which points you actually choose. It is a NumGrid x Nbparam matrix, which tells you for each estimation point which 
-                                 % values of the parameters you choose.
+                                 %values of the parameters you choose.
                               
 %% Estimation
 
@@ -134,8 +140,10 @@ tau_grid = tau_vec(index(:,3));
 kappa_grid = kappa_vec(index(:,4));
 f_grid = f_vec(index(:,5));
 
+
+
 parfor i = 1:NumGrid
-    
+
     muT=muT_grid(i);
     sigmaT=sigmaT_grid(i);
     tau=tau_grid(i);
@@ -147,7 +155,6 @@ parfor i = 1:NumGrid
     
     Paramarray(i,:)=[muT sigmaT tau kappa f];
     
-    % What is going on here?
     F=f/sigma;
     
     % Given mu_T and sigma_T draw sectoral productivity T_z for each sector z (step 1 of estimation procedure)
@@ -156,31 +163,28 @@ parfor i = 1:NumGrid
     RTL=RT(~small);
     
     % Draw productivities phi (step 2 of estimation procedure)
-    % ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1/theta);                         % TEST!!!
     ZHS=(UHS./(repmat(RTS,MH_small,1))).^(-1/theta);
     ZFS=UFS.^(-1/theta);
-    % ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1/theta);
-    ZHL=(UHL./(repmat(RTL,MH_large,1))).^(-1/theta);                         % TEST!!!
+    ZHL=(UHL./(repmat(RTL,MH_large,1))).^(-1/theta);                        
     ZFL=UFL.^(-1/theta);
     
     % Guess home and foreign output Y
-    Y0=123;
-    YF0=2*Y0;
+     Y0=123;
+     YF0=2*Y0;
     
     tstart=tic
     
     % Run loops to solve model (step 3 of estimation procedure)
-    [Y,YF,~,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA',RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
+    [iter,Y,YF,LF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
     
     % Compute 15 target moments
-    [Momarray(i,:)]=Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA',Y,YF);   
+    [Momarray(i,:)]=Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA,Y,YF);   
     
     time=toc(tstart)
 end
 
 toc(tstart0)
 
-% Need to understand why we need this
 Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
 save('estimation_seed1_grid5','Momarray','Paramarray')                                                 

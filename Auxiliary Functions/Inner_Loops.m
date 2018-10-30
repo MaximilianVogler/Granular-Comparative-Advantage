@@ -24,27 +24,23 @@ MFMH=size(MCHM,1);
 MKP0H=sigma/(sigma-1); 
 PHM=(MKP0H*MCHM).^(1-sigma);                                                
 SLASTH=PHM./cumsum(PHM); % share of last entrant
-% checkmatH=(SLASTH>sigma/Y0*w*F./(ones(MFMH,1)*ALPHA)); % checks which firms enter in CMU case 
-checkmatH=(SLASTH>sigma/Y0*w*F./(repmat(ALPHA,MFMH,1)));                    % TEST!!!
-% SHM=(PHM.*checkmatH)./(ones(MFMH,1)*sum(PHM.*checkmatH));
-SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));                 % TEST!!!
+checkmatH=(SLASTH>sigma/Y0*w*F./(repmat(ALPHA,MFMH,1)));                   % checks which firms enter in CMU case 
+SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));                
 EPSH=sigma; % used to compute markups at the end of the loop
 
 % same as above in foreign market
 MKP0F=sigma/(sigma-1);
 PFM=(MKP0F*MCFM).^(1-sigma);
-SLASTF=PFM./cumsum(PFM);
-% checkmatF=(SLASTF>sigma/YF0*wF*F./(ones(MFMH,1)*ALPHA));      
-checkmatF=(SLASTF>sigma/YF0*wF*F./(repmat(ALPHA,MFMH,1)));                  % TEST!!!
-% SFM=(PFM.*checkmatF)./(ones(MFMH,1)*sum(PFM.*checkmatF));
-SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));                 % TEST!!!    
+SLASTF=PFM./cumsum(PFM);     
+checkmatF=(SLASTF>sigma/YF0*wF*F./(repmat(ALPHA,MFMH,1)));                 
+SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));                  
 EPSF=sigma;
 
 %% Variable Markup 
 % enter loop in VMU case
 if vMU==1
     EPSH=vMU_markup(sigma,SHM,BER);
-    EPSH(EPSH<=1.25)=1.25; % cap markup EPSH/(EPSH-1) at 5                  % WHY???
+    EPSH(EPSH<=1.25)=1.25; % cap markup EPSH/(EPSH-1) at 5                  
     
     EPSF=vMU_markup(sigma,SFM,BER);
     EPSF(EPSF<=1.25)=1.25; % same in foreign
@@ -57,16 +53,14 @@ if vMU==1
         % update shares in home market
         MKPNH=1/2*(MKP0H+EPSH./(EPSH-1)); % set markups for current step
         PHM=(MKPNH.*MCHM).^(1-sigma); % set prices given markups            
-        % SHM=(PHM.*checkmatH)./(ones(MFMH,1)*sum(PHM.*checkmatH)); % calculate shares given prices
-        SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));         % TEST!!!
+        SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));         % calculate shares given prices
         EPSH=vMU_markup(sigma,SHM,BER);
         EPSH(EPSH<=1.25)=1.25; % cap markups at 5 for next step
         
         % same in foreign market       
         MKPNF=1/2*(MKP0F+EPSF./(EPSF-1));
         PFM=(MKPNF.*MCFM).^(1-sigma);                                       
-        % SFM=(PFM.*checkmatF)./(ones(MFMH,1)*sum(PFM.*checkmatF));
-        SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));         % TEST!!!
+        SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));         
         EPSF=vMU_markup(sigma,SFM,BER);
         EPSF(EPSF<=1.25)=1.25;
         
@@ -82,20 +76,16 @@ if vMU==1
     % check entry conditions again with variable markups
     PHM=(MKP0H.*MCHM).^(1-sigma);                                           
     SLASTH=PHM./cumsum(PHM); % share of last entrant
-    % checkmatH=(SLASTH>sigma/Y0*w*F./(ones(MFMH,1)*ALPHA)); % determine which firms enter with CMU fringe
-    checkmatH=(SLASTH>sigma/Y0*w*F./(repmat(ALPHA,MFMH,1)));                % TEST!!!
-    % SHM=(PHM.*checkmatH)./(ones(MFMH,1)*sum(PHM.*checkmatH)); % update shares
-    SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));             % TEST!!!
+    checkmatH=(SLASTH>sigma/Y0*w*F./(repmat(ALPHA,MFMH,1)));                % determine which firms enter with CMU fringe  
+    SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));             % update shares
     EPSH=vMU_markup(sigma,SHM,BER);
     EPSH(EPSH<=1.25)=1.25; % cap markups at 5 (for later)
     
     % same in foreign market
     PFM=(MKP0F.*MCFM).^(1-sigma);                                          
-    SLASTF=PFM./cumsum(PFM);
-    % checkmatF=(SLASTF>sigma/YF0*wF*F./(ones(MFMH,1)*ALPHA));      
-    checkmatF=(SLASTF>sigma/YF0*wF*F./(repmat(ALPHA,MFMH,1)));              % TEST!!!
-    % SFM=(PFM.*checkmatF)./(ones(MFMH,1)*sum(PFM.*checkmatF));
-    SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));             % TEST!!!
+    SLASTF=PFM./cumsum(PFM);     
+    checkmatF=(SLASTF>sigma/YF0*wF*F./(repmat(ALPHA,MFMH,1)));              
+    SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));          
     EPSF=vMU_markup(sigma,SFM,BER);
     EPSF(EPSF<=1.25)=1.25;
     
@@ -107,13 +97,11 @@ if vMU==1
 
         MKPNH=1/2*(MKP0H+EPSH./(EPSH-1));
         PHM=(MKPNH.*MCHM).^(1-sigma);                                     
-        % SHM=(PHM.*checkmatH)./(ones(MFMH,1)*sum(PHM.*checkmatH));
-        SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));         % TEST!!!
+        SHM=(PHM.*checkmatH)./(repmat(sum(PHM.*checkmatH),MFMH,1));         
         
         MKPNF=1/2*(MKP0F+EPSF./(EPSF-1));
-        PFM=(MKPNF.*MCFM).^(1-sigma);                                      
-        % SFM=(PFM.*checkmatF)./(ones(MFMH,1)*sum(PFM.*checkmatF));     
-        SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));         % TEST!!!
+        PFM=(MKPNF.*MCFM).^(1-sigma);                                           
+        SFM=(PFM.*checkmatF)./(repmat(sum(PFM.*checkmatF),MFMH,1));         
         
         EPSH=vMU_markup(sigma,SHM,BER);
         EPSH(EPSH<=1.25)=1.25;
@@ -139,10 +127,10 @@ KVEC=sum(checkmatH); % vector of number of firms that enter in home
 KFVEC=sum(checkmatF);
 PHIHVEC=1./(1+(tau*wF/w)^theta.*RT); % expected import share vector in home
 PHIFVEC=1./(1+(tau*w/wF)^theta./RT);
-%MUHVEC=sum(SHM./MUHM); % average inverse markup vector in home
-%MUFVEC=sum(SFM./MUFM);
-MUHVEC=sum((1-IOTAH).*SHM./MUHM);
-MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           % Careful!!! Need to check whether this is true.
+MUHVEC=sum(SHM./MUHM); % average inverse markup vector in home
+MUFVEC=sum(SFM./MUFM);
+% MUHVEC=sum((1-IOTAH).*SHM./MUHM);
+% MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           
 LAMBDAHVEC=sum(IOTAH.*SHM); % realized import share vector in home
 LAMBDAFVEC=sum(IOTAF.*SFM);
 
@@ -150,10 +138,8 @@ LAMBDAFVEC=sum(IOTAF.*SFM);
 KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector
 DSHM = SHM.*checkmatH.*(1-IOTAH);    % Share on the home market relative to other domestic firms (equation 17)
 DSHM = sort(DSHM,'descend');
-%DSHM = DSHM(DSHM>0);
-DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share relative     NEED TO TEST!!!
+DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share relative    
 TOP1 = DSHM(1,:);
-%TOP1 = TOP1(TOP1>0);
 TOP3 = sum(DSHM(1:3,:));
 XS = sum(IOTAF.*SFM);
 YXS = 1-sum(IOTAH.*SHM);

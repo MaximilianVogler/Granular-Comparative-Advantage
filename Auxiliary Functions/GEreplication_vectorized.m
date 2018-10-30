@@ -15,11 +15,9 @@ while diff>tol && iter<51
     MAT=[(1-LAMBDA)*(MU-1)/MU-1 LAMBDAF*(MUF-1)/MUF;LAMBDA -LAMBDAF];
     VEC=[-w*L+LAMBDAF*wF*F*KF+(1-LAMBDA)*w*F*K;LAMBDA*w*F*K-LAMBDAF*wF*F*KF];
     SOL=MAT\VEC;
-    %SOL=MAT^(-1)*VEC;
 
     Y=SOL(1);
     YF=SOL(2);
-    LF=1/wF*(wF*F*KF+YF*(1-LAMBDAF)/MUF+Y*LAMBDA/MU);
 
     diff=abs(Y-Y0)+abs(YF-YF0);
     iter=iter+1;
@@ -34,6 +32,7 @@ while diff>tol && iter<51
 end
 
 % Use (A13) to solve for L* 
+LF=1/wF*(wF*F*KF+YF*(1-LAMBDAF)/MUF+Y*LAMBDA/MU);
 
 time=toc;
 
