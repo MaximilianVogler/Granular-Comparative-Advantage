@@ -141,7 +141,6 @@ kappa_grid = kappa_vec(index(:,4));
 f_grid = f_vec(index(:,5));
 
 
-
 parfor i = 1:NumGrid
 
     muT=muT_grid(i);
@@ -186,5 +185,7 @@ end
 toc(tstart0)
 
 Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
+
+fprintf('Code has finished running')
 
 save('estimation_seed1_grid5','Momarray','Paramarray')                                                 

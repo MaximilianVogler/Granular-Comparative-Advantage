@@ -9,6 +9,8 @@ MF=size(ZF,1);
 MCH=w./ZH;
 MCF=wF./ZF;
 
+% F = F*468/476;                                                              % CAREFUL, THIS NEEDS TO BE REMOVED!!!
+
 MCHM=[MCH; tau*MCF];
 MCFM=[MCF; tau*MCH]; 
 
@@ -18,6 +20,7 @@ IOTAH=(permH>MH);
 IOTAF=(permF>MF); % find foreign/home entrants in home/foreign markets
 
 MFMH=size(MCHM,1); 
+
 
 %% Constant Markup
 % Set home markups/shares/entry in CMU case
@@ -127,10 +130,10 @@ KVEC=sum(checkmatH); % vector of number of firms that enter in home
 KFVEC=sum(checkmatF);
 PHIHVEC=1./(1+(tau*wF/w)^theta.*RT); % expected import share vector in home
 PHIFVEC=1./(1+(tau*w/wF)^theta./RT);
-MUHVEC=sum(SHM./MUHM); % average inverse markup vector in home
-MUFVEC=sum(SFM./MUFM);
-% MUHVEC=sum((1-IOTAH).*SHM./MUHM);
-% MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           
+% MUHVEC=sum(SHM./MUHM); % average inverse markup vector in home
+% MUFVEC=sum(SFM./MUFM);
+MUHVEC=sum((1-IOTAH).*SHM./MUHM);
+MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           
 LAMBDAHVEC=sum(IOTAH.*SHM); % realized import share vector in home
 LAMBDAFVEC=sum(IOTAF.*SFM);
 
