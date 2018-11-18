@@ -112,15 +112,22 @@ size_grid = 100;
 
 
 %Fine grid 5
-muT_vec = linspace(0.06,0.16,size_grid);
-sigmaT_vec = linspace(1.37,1.45,size_grid);
-tau_vec = linspace(1.32,1.37,size_grid);
-kappa_vec = linspace(1.06,1.09,size_grid);
-f_vec = linspace(2.21,2.79,size_grid)*4.93*.43*10^(-5);
+% muT_vec = linspace(0.06,0.16,size_grid);
+% sigmaT_vec = linspace(1.37,1.45,size_grid);
+% tau_vec = linspace(1.32,1.37,size_grid);
+% kappa_vec = linspace(1.06,1.09,size_grid);
+% f_vec = linspace(2.21,2.79,size_grid)*4.93*.43*10^(-5);
+
+%Fine grid 6
+muT_vec=linspace(0.06,0.18,size_grid);
+sigmaT_vec=linspace(1.3025,1.4581,size_grid);
+tau_vec=linspace(1.3172,1.3883,size_grid);
+kappa_vec=linspace(1.0511,1.1211,size_grid);
+f_vec=linspace(1.95,3.82,size_grid)*4.93*.43*10^(-5);
 
 % Set up Halton grid
 Nbparam = 5;                  
-NumGrid = 20000;                                        % Number of estimation points
+NumGrid = 10000;                                        % Number of estimation points
 
 p = haltonset(Nbparam);                                 % Set up Halton sequence that is choose which points you actually pick for estimation
 p0 = net(p,NumGrid);

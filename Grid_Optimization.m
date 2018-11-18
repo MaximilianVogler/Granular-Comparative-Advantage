@@ -1,4 +1,4 @@
-%% This finds the 20 best points from the inputted data file.
+%% This finds the 20 best points from the inputted data file as in steps 4-5 of the estimation procedure.
 
 %% Housekeeping
 clear all;
