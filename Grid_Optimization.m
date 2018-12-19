@@ -11,7 +11,7 @@ addpath('Data');
 
 datamoments = csvread('Data_Moments.csv');
 
-load('estimation_seed1_grid5');
+load('estimation_seed1_grid6');
 
 %% Set up weighting matrix W
 
@@ -50,7 +50,7 @@ end
 
 disp(paramsP)
 
-save('GridOptimization_seed1_grid5','paramsP')
+save('GridOptimization_seed1_grid6','paramsP')
 
 
 

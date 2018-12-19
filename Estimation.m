@@ -195,4 +195,4 @@ Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
 fprintf('Code has finished running')
 
-save('estimation_seed1_grid5','Momarray','Paramarray')                                                 
+save('estimation_seed1_grid6','Momarray','Paramarray')                                                 

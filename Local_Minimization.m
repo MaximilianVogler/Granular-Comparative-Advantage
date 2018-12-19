@@ -11,7 +11,7 @@ addpath('Auxiliary Functions');
 
 %% Load Results from Grid_Optimization and data moments
 
-load('GridOptimization_seed1_grid5');
+load('GridOptimization_seed1_grid6');
 datamoments = csvread('Data_Moments.csv');
 
 %% Set up Estimation as in Estimation.m
@@ -86,7 +86,7 @@ std_indices = [1,3,5,7,9];
 ref_weight(std_indices) = datamoments(std_indices)/3;
 W = diag((1./(ref_weight.^2)));
 
-lossfun=@(x) lossfunction_redo_v2(x(1),x(2),x(3),x(4),x(5),SIGMA,UHS,UHL,UFS,UFL,rtdraws,small,MH_small,MH_large,ALPHA,w,wF,vMU,BER,datamoments,W);
+lossfun=@(x) Loss_Function(x(1),x(2),x(3),x(4),x(5),SIGMA,UHS,UHL,UFS,UFL,rtdraws,small,MH_small,MH_large,ALPHA,w,wF,vMU,BER,datamoments,W);
 
 options=optimset('TolFun',10^(-5),'TolX',10^(-3));
 
@@ -108,4 +108,4 @@ end
 
 time=toc;
 
-save('local_min_seed1_grid5','paramsP_localmin','paramsP_init','loss_value','time')
+save('local_min_seed1_grid6','paramsP_localmin','paramsP_init','loss_value','time')
