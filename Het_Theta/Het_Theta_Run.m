@@ -1,6 +1,4 @@
-% This code performs the estimation routine as outlined in the appendix,
-% steps 1-3.
-
+% This code runs the heterogeneous theta model and generates Table 3.
 %% Housekeeping
 clear;
 close all;

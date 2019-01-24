@@ -3,3 +3,8 @@ OLD/
 Trial.m
 Old_Trials/
 Results/
+*.aux
+Readme.log
+*.synctex.gz
+*.toc
+
