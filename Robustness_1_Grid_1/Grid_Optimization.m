@@ -50,7 +50,7 @@ end
 
 disp(paramsP)
 
-save('GridOptimization_seed1_grid6','paramsP')
+save('GridOptimization_seed1_grid1','paramsP')
 
 
 
