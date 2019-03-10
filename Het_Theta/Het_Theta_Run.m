@@ -91,19 +91,81 @@ RT=exp(muT+sigmaT*rtdraws);
 RTS=RT(small);
 RTL=RT(~small);
 
-                              
-%% Introduce Theta Heterogeneity
+%% NO Theta Heterogeneity
 
+het = 0;
 kappa_frenchdata=1.015;  
 kappa_model_sim=1.096;
 
+% CHOICE 1: Baseline
+
+choice = 1;
+correc = 1;
+
+THETA = ones(S,1)*theta*correc;
+
+VEC_CD_THETA(:,1) = ALPHA;
+VEC_CD_THETA(:,2) = THETA;
+
+THETAS = THETA(small)';
+THETAL = THETA(~small)';
+
+% Draw productivities phi 
+ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1./(ones(MH_small,1)*THETAS));
+ZFS=UFS.^(-1./(ones(MF_small,1)*THETAS));
+
+ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
+ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
+
+% Run loops (with GE of homogeneous theta as starting point)
+[Y_hom,YF_hom,LF_hom,~,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); % Compute GE results
+
+[moments_hom]=PEmoments_thetas(sigma,F,tau,theta,muT,sigmaT,w,wF,Y_hom,YF_hom,vMU,BER,75,correc,het); %% Compute moments in PE with more sectors (10K+)
+
+name=strcat('Results/homogeneoustheta_',num2str(choice));
+save(name,'moments_hom','Y_hom','YF_hom','LF_hom','ALPHA','THETA','correc')
+
+
+% CHOICE 2: Get correct mean
+
+choice = 2;
+correc=1/kappa_model_sim*(kappa_frenchdata-0.0003);
+
+THETA=ones(S,1)*theta*correc;
+
+VEC_CD_THETA(:,1) = ALPHA;
+VEC_CD_THETA(:,2) = THETA;
+
+THETAS = THETA(small)';
+THETAL = THETA(~small)';
+
+% Draw productivities phi 
+ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1./(ones(MH_small,1)*THETAS));
+ZFS=UFS.^(-1./(ones(MF_small,1)*THETAS));
+
+ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
+ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
+
+% Run loops (with GE of homogeneous theta as starting point)
+[Y_hom,YF_hom,LF_hom,~,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); % Compute GE results
+
+[moments_hom]=PEmoments_thetas(sigma,F,tau,theta,muT,sigmaT,w,wF,Y_hom,YF_hom,vMU,BER,75,correc,het); %% Compute moments in PE with more sectors (10K+)
+
+name=strcat('Results/homogeneoustheta_',num2str(choice));
+save(name,'moments_hom','Y_hom','YF_hom','LF_hom','ALPHA','THETA','correc')
+
+
+%% Introduce Theta Heterogeneity
+
+het = 1;
 
 % CHOICE 1: Read theta from the datas
 
 choice = 1;
 correc = 1;
 
-THETA = doublevec(:,2)*(sigma-1)*correc;         %% Translate kappa into theta
+% Translate kappa into theta
+THETA = doublevec(:,2)*(sigma-1)*correc;         
 
 % Prepare inputs for loops
 VEC_CD_THETA(:,1) = ALPHA;
@@ -120,13 +182,12 @@ ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
 ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
     
 % Run loops (with GE of homogeneous theta as starting point)
-[Y_het,YF_het,~,moments_het,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); %% NEED TO WRITE THIS FUNCTION
+[Y_het,YF_het,LF_het,~,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); % Compute GE results
 
-
-%[~,moments_het]=PEmoments_thetas_v2(sigma,F,tau,RT,ZHS,ZFS,ZHL,ZFL,w,wF,Y_het,YF_het,L0,vMU,75,VEC_CD_THETA);  %% WHAT MOMENTS DO I ACTUALLY NEED?
-    
+[moments_het]=PEmoments_thetas(sigma,F,tau,theta,muT,sigmaT,w,wF,Y_het,YF_het,vMU,BER,75,correc,het); %% Compute moments in PE with more sectors (10K+)
+  
 name=strcat('Results/heterogenoustheta_',num2str(choice));
-save(name,'moments_het','Y_het','YF_het','ALPHA','THETA','correc');
+save(name,'moments_het','Y_het','YF_het','LF_het','ALPHA','THETA','correc');
 
 
 % CHOICE 2: Scaling theta down to get correct mean
@@ -153,13 +214,12 @@ ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
 ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
 
 % Run loops (with GE of homogeneous theta as starting point)
-[Y_het,YF_het,~,moments_het,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); %% NEED TO WRITE THIS FUNCTION
+[Y_het,YF_het,LF_het,~,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); % Compute GE results
 
-%[~,moments_het]=PEmoments_thetas_v2(sigma,F,tau,RT,ZHS,ZFS,ZHL,ZFL,w,wF,Y_het,YF_het,L0,vMU,75,VEC_CD_THETA); %#ok<ASGLU> %% WHAT MOMENTS DO I ACTUALLY NEED?
-
+[moments_het]=PEmoments_thetas(sigma,F,tau,theta,muT,sigmaT,w,wF,Y_het,YF_het,vMU,BER,75,correc,het); %% Compute moments in PE with more sectors (10K+)
+  
 name=strcat('Results/heterogenoustheta_',num2str(choice));
-save(name,'moments_het','Y_het','YF_het','ALPHA','THETA','correc')
-
+save(name,'moments_het','Y_het','YF_het','LF_het','ALPHA','THETA','correc');
 
 % CHOICE 3: Get right top market share
 
@@ -183,72 +243,10 @@ ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
 ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
 
 % Run loops (with GE of homogeneous theta as starting point)
-[Y_het,YF_het,~,moments_het,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); %% NEED TO WRITE THIS FUNCTION
+[Y_het,YF_het,LF_het,~,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); % Compute GE results
 
-%[~,moments_het]=PEmoments_thetas_v2(sigma,F,tau,RT,ZHS,ZFS,ZHL,ZFL,w,wF,Y_het,YF_het,L0,vMU,75,VEC_CD_THETA); %% WHAT MOMENTS DO I ACTUALLY NEED?
-
+[moments_het]=PEmoments_thetas(sigma,F,tau,theta,muT,sigmaT,w,wF,Y_het,YF_het,vMU,BER,75,correc,het); %% Compute moments in PE with more sectors (10K+)
+  
 name=strcat('Results/heterogenoustheta_',num2str(choice));
-save(name,'moments_het','Y_het','YF_het','ALPHA','THETA','correc')
-
-%% NO Theta Heterogeneity
-
-% CHOICE 1: Baseline
-
-choice = 1;
-correc = 1;
-
-THETA = ones(S,1)*theta*correc;
-
-VEC_CD_THETA(:,1) = ALPHA;
-VEC_CD_THETA(:,2) = THETA;
-
-THETAS = THETA(small)';
-THETAL = THETA(~small)';
-
-% Draw productivities phi 
-ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1./(ones(MH_small,1)*THETAS));
-ZFS=UFS.^(-1./(ones(MF_small,1)*THETAS));
-
-ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
-ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
-
-% Run loops (with GE of homogeneous theta as starting point)
-[Y_hom,YF_hom,~,moments_hom,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); %% NEED TO WRITE THIS FUNCTION
-
-%[~,moments_hom]=PEmoments_thetas_v2(sigma,F,tau,RT,ZHS,ZFS,ZHL,ZFL,w,wF,Y_hom,YF_hom,L0,vMU,75,VEC_CD_THETA); %% WHAT MOMENTS DO I ACTUALLY NEED?
-
-name=strcat('Results/homogeneoustheta_',num2str(choice));
-save(name,'moments_hom','Y_hom','YF_hom','ALPHA','THETA','correc')
-
-
-
-
-% CHOICE 2: Get correct mean
-
-choice = 2;
-correc=1/kappa_model_sim*(kappa_frenchdata-0.0003);
-
-THETA=ones(S,1)*theta*correc;
-
-VEC_CD_THETA(:,1) = ALPHA;
-VEC_CD_THETA(:,2) = THETA;
-
-THETAS = THETA(small)';
-THETAL = THETA(~small)';
-
-% Draw productivities phi 
-ZHS=(UHS./(ones(MH_small,1)*RTS)).^(-1./(ones(MH_small,1)*THETAS));
-ZFS=UFS.^(-1./(ones(MF_small,1)*THETAS));
-
-ZHL=(UHL./(ones(MH_large,1)*RTL)).^(-1./(ones(MH_large,1)*THETAL));
-ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
-
-% Run loops (with GE of homogeneous theta as starting point)
-[Y_hom,YF_hom,~,moments_hom,~,~]=GEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA); %% NEED TO WRITE THIS FUNCTION
-
-%[~,moments_hom]=PEmoments_thetas_v2(sigma,F,tau,RT,ZHS,ZFS,ZHL,ZFL,w,wF,Y_hom,YF_hom,L0,vMU,75,VEC_CD_THETA); %% WHAT MOMENTS DO I ACTUALLY NEED?
-
-name=strcat('Results/homogeneoustheta_',num2str(choice));
-save(name,'moments_hom','Y_hom','YF_hom','ALPHA','THETA','correc')
-
-                                                 
+save(name,'moments_het','Y_het','YF_het','LF_het','ALPHA','THETA','correc');
+ 

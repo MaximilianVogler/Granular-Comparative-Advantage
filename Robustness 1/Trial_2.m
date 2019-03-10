@@ -153,14 +153,14 @@ f_grid = f_vec(index(:,5));
     sigmaT=1.394;
     tau=1.342;
     kappa=1.0955;
-    f=2.005*10^(-5);
+    f=1.818*4.93*.43*10^(-5);
     
     theta=(SIGMA-1)*kappa;
     sigma=SIGMA;
     
     Paramarray=[muT sigmaT tau kappa f];
     
-    F=0.284*10^(-5);
+    F=0.3636
     
     % Given mu_T and sigma_T draw sectoral productivity T_z for each sector z (step 1 of estimation procedure)
     R = exponential_draws(sigmaT,rudraws,rvdraws);
@@ -195,4 +195,4 @@ Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
 fprintf('Code has finished running')
 
-save('estimation_seed1_grid6','Momarray','Paramarray')                                                 
+%save('estimation_seed1_grid6','Momarray','Paramarray')                                                 
