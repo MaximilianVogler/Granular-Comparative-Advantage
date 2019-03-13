@@ -8,6 +8,7 @@ clc;
 
 addpath('Data');
 addpath('Auxiliary Functions');
+addpath('Results');
 
 %% Load Results from Grid_Optimization and data moments
 

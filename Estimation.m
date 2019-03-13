@@ -181,12 +181,13 @@ parfor i = 1:NumGrid
     tstart=tic
     
     % Run loops to solve model (step 3 of estimation procedure)
-    [iter,Y,YF,LF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
+    [iter,Y,YF,LF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER,0);
     
     % Compute 15 target moments
     [Momarray(i,:)]=Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA,Y,YF);   
     
     time=toc(tstart)
+    fprintf('Done')
 end
 
 toc(tstart0)
@@ -195,4 +196,4 @@ Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
 fprintf('Code has finished running')
 
-save('estimation_seed1_grid6','Momarray','Paramarray')                                                 
+save('Results/estimation_seed1_grid6','Momarray','Paramarray')                                                 

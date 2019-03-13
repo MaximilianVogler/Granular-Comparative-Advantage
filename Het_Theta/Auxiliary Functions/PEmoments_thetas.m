@@ -87,9 +87,5 @@ ZFL=UFL.^(-1./(ones(MF_large,1)*THETAL));
 
 [~,~,~,~,~,~,~,~,~,mom] = PEreplication_thetas(sigma,F,tau,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,paretonb,VEC_CD_THETA);
 
-%% Compute Moments
-
-
-
 
 end

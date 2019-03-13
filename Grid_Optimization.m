@@ -6,12 +6,13 @@ close all;
 clc;
 
 addpath('Data');
+addpath('Results');
 
 %% Load moments from both data and estimation
 
 datamoments = csvread('Data_Moments.csv');
 
-load('estimation_seed1_grid1');
+load('estimation_seed1_grid6');
 
 %% Set up weighting matrix W
 
@@ -50,7 +51,11 @@ end
 
 disp(paramsP)
 
-save('GridOptimization_seed1_grid6','paramsP')
+save('Results/GridOptimization_seed1_grid6','paramsP')
 
+bestInd = find(paramsP(:,6)==min(paramsP(:,6)));
+bestParams = paramsP(bestInd,1:5);
+
+save('Results/Estimate_seed1_grid6','bestParams')
 
 
