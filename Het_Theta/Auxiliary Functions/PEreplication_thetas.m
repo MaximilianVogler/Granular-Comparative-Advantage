@@ -28,9 +28,9 @@ PARETO=zeros(1,S);
 
 % Solve inner loops separately for small and large sectors (for speed)
 [KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),TOP1(small),PARETO(small)]=...
-    Inner_Loops_thetas(sigma,F,tau,ALPHAS',THETAS',RTS,ZHS,ZFS,w,wF,Y0,YF0,vMU,BER,paretonb);
+    Inner_Loops_thetas(sigma,F,tau,ALPHAS',THETAS',RTS,ZHS,ZFS,w,wF,Y0,YF0,vMU,BER,paretonb,S);
 [KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),TOP1(~small),PARETO(~small)]=...
-    Inner_Loops_thetas(sigma,F,tau,ALPHAL',THETAL',RTL,ZHL,ZFL,w,wF,Y0,YF0,vMU,BER,paretonb);
+    Inner_Loops_thetas(sigma,F,tau,ALPHAL',THETAL',RTL,ZHL,ZFL,w,wF,Y0,YF0,vMU,BER,paretonb,S);
 %Take averages of vectors to obtain aggregates      % These lines were originally included.    
 % K=mean(KVEC); % number of firms in home
 % KF=mean(KFVEC);

@@ -1,4 +1,4 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,TOP1,Paretovec] = Inner_Loops_thetas(sigma,F,tau,ALPHA,THETA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb)
+function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,TOP1,Paretovec] = Inner_Loops_thetas(sigma,F,tau,ALPHA,THETA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,S)
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -9,7 +9,7 @@ MF=size(ZF,1);
 MCH=w./ZH;
 MCF=wF./ZF;
 
-% F = F*468/476;    % This line was originally included.
+% F = F*468/S;    % This line was originally included.
 
 MCHM=[MCH; tau*MCF];
 MCFM=[MCF; tau*MCH]; 
