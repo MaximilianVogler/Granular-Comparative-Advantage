@@ -9,7 +9,7 @@ MF=size(ZF,1);
 MCH=w./ZH;
 MCF=wF./ZF;
 
-% F = F*468/S;                                                              % CAREFUL, THIS NEEDS TO BE REMOVED!!!
+F = F*476/S;                                                              % CAREFUL, THIS NEEDS TO BE REMOVED!!!
 
 MCHM=[MCH; tau*MCF];
 MCFM=[MCF; tau*MCH]; 

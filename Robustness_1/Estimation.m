@@ -57,8 +57,7 @@ Nlarge = S-Nsmall;
 
 % Make random draws for loop
 rng(aseed);                                               % Reset random number generator for consistency with old code
-rudraws = rand(1,S);
-rvdraws = rand(1,S);
+rtdraws = randn(1,S);
 
 UH0S = exprnd(1,MH_small,Nsmall);                         % Draw U of most productive small home shadow firm and spacings in each sector from exponential with mean 1
 UF0S = exprnd(1,MF_small,Nsmall);                        
@@ -80,12 +79,13 @@ L0 = 100;
 size_grid = 100;
 
 %Sparse grid 1
-muT_vec = linspace(-0.5,0.5,size_grid);
-sigmaT_vec = linspace(1,1.8,size_grid);
-tau_vec = linspace(1.1,2.2,size_grid);
-kappa_vec = linspace(.95,1.2,size_grid);
-f_vec = linspace(.5,6,size_grid)*4.93*.43*10^(-5);
 
+% muT_vec = linspace(-0.5,0.5,size_grid);
+% sigmaT_vec = linspace(1,1.8,size_grid);
+% tau_vec = linspace(1.1,2.2,size_grid);
+% kappa_vec = linspace(.95,1.2,size_grid);
+% f_vec = linspace(.5,6,size_grid)*4.93*.43*10^(-5);
+%  
 
 %Sparse grid 2
 % muT_vec = linspace(-0.16,0.3,size_grid);
@@ -119,15 +119,15 @@ f_vec = linspace(.5,6,size_grid)*4.93*.43*10^(-5);
 % f_vec = linspace(2.21,2.79,size_grid)*4.93*.43*10^(-5);
 
 %Fine grid 6
-% muT_vec=linspace(0.06,0.18,size_grid);
-% sigmaT_vec=linspace(1.3025,1.4581,size_grid);
-% tau_vec=linspace(1.3172,1.3883,size_grid);
-% kappa_vec=linspace(1.0511,1.1211,size_grid);
-% f_vec=linspace(1.95,3.82,size_grid)*4.93*.43*10^(-5);
+muT_vec=linspace(0.06,0.18,size_grid);
+sigmaT_vec=linspace(1.3025,1.4581,size_grid);
+tau_vec=linspace(1.3172,1.3883,size_grid);
+kappa_vec=linspace(1.0511,1.1211,size_grid);
+f_vec=linspace(1.95,3.82,size_grid)*4.93*.43*10^(-5);
 
 % Set up Halton grid
 Nbparam = 5;                  
-NumGrid = 20000;                                        % Number of estimation points
+NumGrid = 10000;                                        % Number of estimation points
 
 p = haltonset(Nbparam);                                 % Set up Halton sequence that is choose which points you actually pick for estimation
 p0 = net(p,NumGrid);
@@ -164,8 +164,7 @@ parfor i = 1:NumGrid
     F=f/sigma;
     
     % Given mu_T and sigma_T draw sectoral productivity T_z for each sector z (step 1 of estimation procedure)
-    R = exponential_draws(sigmaT,rudraws,rvdraws);
-    RT=exp(muT+R);
+    RT=exp(muT+sigmaT*rtdraws);
     RTS=RT(small);
     RTL=RT(~small);
     
@@ -182,12 +181,13 @@ parfor i = 1:NumGrid
     tstart=tic
     
     % Run loops to solve model (step 3 of estimation procedure)
-    [iter,Y,YF,LF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER);
+    [iter,Y,YF,LF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER,0);
     
     % Compute 15 target moments
     [Momarray(i,:)]=Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA,Y,YF);   
     
     time=toc(tstart)
+    fprintf('Done')
 end
 
 toc(tstart0)
@@ -196,4 +196,4 @@ Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
 fprintf('Code has finished running')
 
-save('estimation_seed1_grid1','Momarray','Paramarray')                                                 
+save('Results/estimation_seed1_grid4','Momarray','Paramarray')                                                 

@@ -13,7 +13,7 @@ addpath('Auxiliary Functions');
 addpath('Results');
 
 %% Load Parameters
-load('Estimate_seed1_grid6') 
+load('Estimate_seed1_grid4') 
 
 % Extract parameters
 muT = bestParams(1,1);
@@ -80,7 +80,8 @@ Nlarge = S-Nsmall;
 
 % Make random draws for loop
 rng(aseed);                                               % Reset random number generator for consistency with old code
-rtdraws = randn(1,S);
+rudraws = rand(1,S);
+rvdraws = rand(1,S);
 
 UH0S = exprnd(1,MH_small,Nsmall);                         % Draw U of most productive small home shadow firm and spacings in each sector from exponential with mean 1
 UF0S = exprnd(1,MF_small,Nsmall);                        
@@ -96,7 +97,8 @@ UFL = cumsum(UF0L);
 L0 = 100;
 
 % Given mu_T and sigma_T draw sectoral productivity T_z for each sector z (step 1 of estimation procedure)
-RT=exp(muT+sigmaT*rtdraws);
+R = exponential_draws(sigmaT,rudraws,rvdraws);
+RT=exp(muT+R);
 RTS=RT(small);
 RTL=RT(~small);
     
@@ -132,7 +134,7 @@ scale = 22;
 
 %% Save moments
 
-save('Results/Moments_seed1_grid6','StandardMom','AdditionalMom')
+save('Results/Moments_seed1_grid4','StandardMom','AdditionalMom')
 
 %% Generate Graphs
 
@@ -173,7 +175,7 @@ bar(VPCT(:,3),'FaceColor','[0.900, 0.20, 0.05]') %'b','FaceAlpha',0.5)%,'BarWidt
 lgd = legend('$1/4$ Granular','$1/3$ Granular', '$1/2$ Granular');
 set(lgd,'box','off','location','northwest','interpreter','latex','fontsize',20)
 xlim([0.5, 10.55])
-ylim([0, .3])
+ylim([0, .25])
 xlabel('Deciles of sectors, by export intensity $\Lambda_z^\ast$','interpreter','latex','fontsize',20)
 set(gca,'FontSize',16)
 set(gca,'xtick',[0.5:1:9.5 10.55])

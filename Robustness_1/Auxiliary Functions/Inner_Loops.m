@@ -1,4 +1,4 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER)
+function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS,Paretovec] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -9,7 +9,7 @@ MF=size(ZF,1);
 MCH=w./ZH;
 MCF=wF./ZF;
 
-% F = F*468/476;                                                              % CAREFUL, THIS NEEDS TO BE REMOVED!!!
+F = F*476/S;                                                              % CAREFUL, THIS NEEDS TO BE REMOVED!!!
 
 MCHM=[MCH; tau*MCF];
 MCFM=[MCF; tau*MCH]; 
@@ -146,5 +146,26 @@ TOP1 = DSHM(1,:);
 TOP3 = sum(DSHM(1:3,:));
 XS = sum(IOTAF.*SFM);
 YXS = 1-sum(IOTAH.*SHM);
+
+N = length(DSHM(1,:));
+Paretovec=zeros(1,N);
+
+if AddMom == 1
+    Y=log((1:MFMH)-0.5)';
+    for i=1:N
+%     lshare=log(DSHM(:,i)); % generate log shares
+    lshare=log(DSHM(:,i));
+    X=[0*Y+1 lshare];
+    pareto_thresh=prctile(lshare(isfinite(lshare)),paretonb);
+    index=isfinite(lshare)&lshare>pareto_thresh; % include if share is nonzero and sufficiently large
+    if sum(index)>10 % exclude sectors with few firms
+        B=regress(Y(index),X(index,:));
+        Paretovec(i)=-B(2);
+    else
+        Paretovec(i)=0; 
+    end
+    end
+end
+
 
 end
