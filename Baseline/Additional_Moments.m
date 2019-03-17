@@ -125,7 +125,7 @@ YF0=2*Y0;
 paretonb = 75;
 
 % Multiple of sectors (Total # of sectors = 117*4*scale)
-scale = 22;
+scale = 1;
 
 % Run PE model
 [ALPHA,PHIFVEC,LAMBDAFVEC,AdditionalMom]=PEmoments(sigma,F,tau,theta,muT,sigmaT,w,wF,Y,YF,vMU,BER,paretonb,scale);

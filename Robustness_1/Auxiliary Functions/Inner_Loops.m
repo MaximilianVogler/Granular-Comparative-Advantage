@@ -153,8 +153,7 @@ Paretovec=zeros(1,N);
 if AddMom == 1
     Y=log((1:MFMH)-0.5)';
     for i=1:N
-%     lshare=log(DSHM(:,i)); % generate log shares
-    lshare=log(DSHM(:,i));
+    lshare=log(DSHM(:,i)); % generate log shares
     X=[0*Y+1 lshare];
     pareto_thresh=prctile(lshare(isfinite(lshare)),paretonb);
     index=isfinite(lshare)&lshare>pareto_thresh; % include if share is nonzero and sufficiently large
