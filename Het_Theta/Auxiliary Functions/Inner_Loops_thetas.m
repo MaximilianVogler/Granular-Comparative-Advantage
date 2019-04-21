@@ -9,7 +9,9 @@ MF=size(ZF,1);
 MCH=w./ZH;
 MCF=wF./ZF;
 
-F = F*476/S;    % This line was originally included.
+F = F*476/S;                                                              % This is required to adjust the fixed costs for the simulation size. This is because we have chosen the normalization sum(alpha)=1.  
+                                                                          % This implies that the size of the sector changes as the average alpha decreases as the number of sectors S increases. 
+                                                                          % To keep the model stable, we thus need to adjust the fixed cost F accordingly. Equivalently, we could have had sum(alpha)=S, since this would have implied a constant average alpha of 1.
 
 MCHM=[MCH; tau*MCF];
 MCFM=[MCF; tau*MCH]; 
