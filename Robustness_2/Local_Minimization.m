@@ -23,11 +23,11 @@ tic
 aseed = 1;
 rng(aseed);
 
-% Number of shadow firms
-MF_large=10000;
-MF_small=1400;
-MH_large=5000;
-MH_small=700;
+% Relative size of economies
+k = 1.75;
+
+% Parameter governing the number of firms in each sector
+M = 350;   
 
 % Wages
 wR = 1.13;      
@@ -68,16 +68,35 @@ Nlarge = S-Nsmall;
 rng(aseed);                                               % Reset random number generator for consistency with old code
 rtdraws = randn(1,S);
 
-UH0S = exprnd(1,MH_small,Nsmall);                         % Draw U of most productive small home shadow firm and spacings in each sector from exponential with mean 1
-UF0S = exprnd(1,MF_small,Nsmall);                        
-UHS = cumsum(UH0S);                                       % Cumulate to get U of each home firm in each sector (see footnote 57)
-UFS = cumsum(UF0S);
+% Get number of draws
+MH = round(M*S*ALPHA);          
+MF = round(k*M*S*ALPHA); 
 
-UH0L = exprnd(1,MH_large,Nlarge);
-UF0L = exprnd(1,MF_large,Nlarge);
-UHL = cumsum(UH0L);
-UFL = cumsum(UF0L);
+% Draw normal mean productivity of home firms
+mu_H = muT+sigmaT*rtdraws;
 
+% Draw log-normal productivities of home and foreign firms
+phiH = ones(max(MH),S)*epsilon;
+phiF = ones(max(MF),S)*epsilon;
+
+indexH = false(max(MH),S);
+indexF = false(max(MF),S);
+
+rng(aseed);
+for j = 1:S
+    phiH(1:MH(j),j) = exp(mu_H(j)+theta*randn(MH(j),1));
+    indexH(1:MH(j),j) = true(MH(j),1);
+    phiF(1:MF(j),j) = exp(theta*randn(MF(j),1));
+    indexF(1:MF(j),j) = true(MF(j),1);
+end
+
+ZHS = phiH(1:max(sum(indexH(:,small))),small);
+ZFS = phiF(1:max(sum(indexF(:,small))),small);
+ZHL = phiH(:,~small);
+ZFL = phiF(:,~small);
+
+RTS = exp(mu_H(small));
+RTL = exp(mu_H(~small));
 %% Set up weight matrix W
 
 ref_weight = datamoments;
@@ -87,7 +106,7 @@ std_indices = [1,3,5,7,9];
 ref_weight(std_indices) = datamoments(std_indices)/3;
 W = diag((1./(ref_weight.^2)));
 
-lossfun=@(x) Loss_Function(x(1),x(2),x(3),x(4),x(5),SIGMA,UHS,UHL,UFS,UFL,rtdraws,small,MH_small,MH_large,ALPHA,w,wF,vMU,BER,datamoments,W);
+lossfun=@(x) Loss_Function(x(1),x(2),x(3),x(4),x(5),SIGMA,ZHS,ZHL,ZFS,ZFL,RTS,RTL,rtdraws,small,MH_small,MH_large,ALPHA,w,wF,vMU,BER,datamoments,W);
 
 options=optimset('TolFun',10^(-5),'TolX',10^(-3));
 
