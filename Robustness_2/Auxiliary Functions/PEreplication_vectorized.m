@@ -1,4 +1,4 @@
-function [K,KF,PHI,PHIF,LAMBDA,LAMBDAF,MU,MUF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC,PHIFVEC,mom] = PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y0,YF0,small,vMU,BER,paretonb,AddMom)
+function [K,KF,KVEC,KFVEC,PHI,PHIF,LAMBDA,LAMBDAF,MU,MUF,KHH,KFH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC,PHIFVEC,mom] = PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y0,YF0,small,vMU,BER,paretonb,AddMom)
 % Takes parameters, random draws, and initial guess as inputs. Outputs are
 % K, Lambda, and aggregate markup Mu in both countries. 
 
@@ -17,6 +17,7 @@ KFVEC=zeros(1,S);
 LAMBDAHVEC=zeros(1,S);
 LAMBDAFVEC=zeros(1,S); 
 KHH=zeros(1,S);
+KFH=zeros(1,S);
 TOP1=zeros(1,S);
 TOP3=zeros(1,S);
 XS=zeros(1,S);
@@ -25,14 +26,14 @@ PARETO=zeros(1,S);
 mom=zeros(1,S);
 if AddMom == 0
     % Solve inner loops separately for small and large sectors (for speed)
-    [KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),KHH(small),TOP1(small),TOP3(small),XS(small),YXS(small),~]=...
+    [KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),KHH(small),KFH(small),TOP1(small),TOP3(small),XS(small),YXS(small),~]=...
         Inner_Loops(sigma,theta,F,tau,ALPHAS',RTS,ZHS,ZFS,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S);
-    [KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),KHH(~small),TOP1(~small),TOP3(~small),XS(~small),YXS(~small),~]=...
+    [KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),KHH(~small),KFH(~small),TOP1(~small),TOP3(~small),XS(~small),YXS(~small),~]=...
         Inner_Loops(sigma,theta,F,tau,ALPHAL',RTL,ZHL,ZFL,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S);
 elseif AddMom == 1
-    [KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),KHH(small),TOP1(small),TOP3(small),XS(small),YXS(small),PARETO(small)]=...
+    [KVEC(small),KFVEC(small),PHIHVEC(small),PHIFVEC(small),MUHVEC(small),MUFVEC(small),LAMBDAHVEC(small),LAMBDAFVEC(small),KHH(small),KFH(small),TOP1(small),TOP3(small),XS(small),YXS(small),PARETO(small)]=...
         Inner_Loops(sigma,theta,F,tau,ALPHAS',RTS,ZHS,ZFS,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S);
-    [KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),KHH(~small),TOP1(~small),TOP3(~small),XS(~small),YXS(~small),PARETO(~small)]=...
+    [KVEC(~small),KFVEC(~small),PHIHVEC(~small),PHIFVEC(~small),MUHVEC(~small),MUFVEC(~small),LAMBDAHVEC(~small),LAMBDAFVEC(~small),KHH(~small),KFH(~small),TOP1(~small),TOP3(~small),XS(~small),YXS(~small),PARETO(~small)]=...
         Inner_Loops(sigma,theta,F,tau,ALPHAL',RTL,ZHL,ZFL,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S);
     PARETO=mean(PARETO(PARETO>0));
     DEC1=(1-var(PHIFVEC)/var(LAMBDAFVEC))*100;

@@ -1,4 +1,4 @@
-function[ALPHA,PHIFVEC,LAMBDAFVEC,AdditionalMom] = PEmoments(sigma,F,tau,theta,muT,sigmaT,w,wF,Y,YF,vMU,BER,paretonb,scale)
+function[ALPHA,PHIFVEC,LAMBDAFVEC,KVEC,KFVEC,KHH,KFH,MH,RT,AdditionalMom] = PEmoments(sigma,F,tau,theta,muT,sigmaT,w,wF,Y,YF,vMU,BER,paretonb,scale)
 
 %% Setup of model
 
@@ -12,6 +12,9 @@ k = 1.75;
 % Parameter governing the number of firms in each sector
 M = 350;    
 
+% Productivities for added firms
+epsilon = 1e-10;
+
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
 
@@ -22,7 +25,7 @@ S = S_init*S_multiple;                                  % Number of sectors used
 % Assign CD-shares across sectors 
 ALPHA = cdshares_init;      
 
-for iloop = 1:S_multiple-1;
+for iloop = 1:S_multiple-1
     ALPHA = [ALPHA;cdshares_init(randperm(S_init))];
 end
 ALPHA = ALPHA/S_multiple;
@@ -70,10 +73,10 @@ ZFL = phiF(:,~small);
 
 RTS = exp(mu_H(small));
 RTL = exp(mu_H(~small));
+RT = exp(mu_H);
 
 %% Run PE model
 
-[~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,AdditionalMom] = PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,paretonb,1);
-
+[~,~,KVEC,KFVEC,~,~,~,~,~,~,KHH,KFH,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,AdditionalMom] = PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,paretonb,1);
 
 end

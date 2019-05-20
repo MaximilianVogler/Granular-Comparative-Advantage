@@ -1,4 +1,4 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS,Paretovec] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
+function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,KFH,TOP1,TOP3,XS,YXS,Paretovec] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -138,6 +138,7 @@ LAMBDAFVEC=sum(IOTAF.*SFM);
 
 % Auxiliary variables for moments
 KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector
+KFH = sum(checkmatF.*(1-IOTAF));    % Number of foreign firms active in foreign for each sector
 DSHM = SHM.*checkmatH.*(1-IOTAH);    % Share on the home market relative to other domestic firms (equation 17)
 DSHM = sort(DSHM,'descend');
 DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share relative    

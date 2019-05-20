@@ -6,7 +6,7 @@ clear all;
 close all;
 clc;
 
-tstart0 = tic
+tstart0 = tic;
 
 addpath('Data');
 addpath('Auxiliary Functions');
@@ -47,7 +47,7 @@ S = S_init*S_multiple;                                  % Number of sectors used
 % Assign CD-shares across sectors 
 ALPHA = cdshares_init;      
 
-for iloop = 1:S_multiple-1;
+for iloop = 1:S_multiple-1
     ALPHA = [ALPHA;cdshares_init(randperm(S_init))];
 end
 ALPHA = ALPHA/S_multiple;
@@ -78,27 +78,27 @@ size_grid = 100;
 
 %Sparse grid 1
 
-muT_vec = linspace(-0.5,0.5,size_grid);
-sigmaT_vec = linspace(1,1.8,size_grid);
-tau_vec = linspace(1.1,2.2,size_grid);
-kappa_vec = linspace(.95,1.2,size_grid);
-f_vec = linspace(.5,6,size_grid)*4.93*.43*10^(-5);
+% muT_vec = linspace(-0.5,0.5,size_grid);
+% sigmaT_vec = linspace(1.0,1.8,size_grid);
+% tau_vec = linspace(1.1,2.2,size_grid);
+% kappa_vec = linspace(0.05,0.3,size_grid);
+% f_vec = linspace(.5,6,size_grid)*4.93*.43*10^(-5);
  
 
 %Sparse grid 2
-% muT_vec = linspace(-0.16,0.3,size_grid);
-% sigmaT_vec = linspace(1.2,1.7,size_grid);
-% tau_vec = linspace(1.2,1.6,size_grid);
-% kappa_vec = linspace(1.01,1.13,size_grid);
-% f_vec = linspace(1.1,4.8,size_grid)*4.93*.43*10^(-5);
+% muT_vec = linspace(-0.2,0.8,size_grid);
+% sigmaT_vec = linspace(0.7,1.7,size_grid);
+% tau_vec = linspace(1.1,3.0,size_grid);
+% kappa_vec = linspace(0.05,0.2,size_grid);
+% f_vec = linspace(0.45,3.53,size_grid)*4.93*.43*10^(-5);
  
 
 %Fine grid 3
-% muT_vec = linspace(-0.06,0.22,size_grid);
-% sigmaT_vec = linspace(1.29,1.55,size_grid);
-% tau_vec = linspace(1.3,1.4,size_grid);
-% kappa_vec = linspace(1.05,1.11,size_grid);
-% f_vec = linspace(1.55,3.95,size_grid)*4.93*.43*10^(-5);
+muT_vec = linspace(-0.05,0.5,size_grid);
+sigmaT_vec = linspace(0.5,1.4,size_grid);
+tau_vec = linspace(1.3,3.2,size_grid);
+kappa_vec = linspace(0.08,0.175,size_grid);
+f_vec = linspace(0.35,4.2,size_grid)*4.93*.43*10^(-5);
 
 
 %Fine grid 4
@@ -125,12 +125,12 @@ f_vec = linspace(.5,6,size_grid)*4.93*.43*10^(-5);
 
 % Set up Halton grid
 Nbparam = 5;                  
-NumGrid = 10000;                                        % Number of estimation points
+NumGrid = 20000;                                        % Number of estimation points
 
 p = haltonset(Nbparam);                                 % Set up Halton sequence that is choose which points you actually pick for estimation
 p0 = net(p,NumGrid);
-index = floor(p0*size_grid)+1;   % This index tells you which points you actually choose. It is a NumGrid x Nbparam matrix, which tells you for each estimation point which 
-                                 %values of the parameters you choose.
+index = floor(p0*size_grid)+1;                          % This index tells you which points you actually choose. It is a NumGrid x Nbparam matrix, which tells you for each estimation point which 
+                                                        % values of the parameters you choose.
                               
 %% Estimation
 
@@ -148,7 +148,6 @@ f_grid = f_vec(index(:,5));
 
 parfor i = 1:NumGrid
     
-% i=1;
     muT=muT_grid(i);
     sigmaT=sigmaT_grid(i);
     tau=tau_grid(i);
@@ -218,7 +217,7 @@ parfor i = 1:NumGrid
     [Momarray(i,:)]=Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA,Y,YF);   
     
     time=toc(tstart)
-    fprintf('Done')
+
 end
 
 toc(tstart0)
@@ -227,4 +226,4 @@ Paramarray(:,5)=Paramarray(:,5)/(4.93*.43*10^(-5));
 
 fprintf('Code has finished running')
 
-save('Results/estimation_seed1_grid1','Momarray','Paramarray')                                                 
+save('Results/estimation_seed1_grid3','Momarray','Paramarray')                                                 

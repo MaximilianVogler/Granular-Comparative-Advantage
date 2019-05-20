@@ -13,7 +13,7 @@ addpath('Auxiliary Functions');
 addpath('Results');
 
 %% Load Parameters
-load('Estimate_seed1_grid1') 
+load('Estimate_seed1_grid2') 
 
 % Extract parameters
 muT = bestParams(1,1);
@@ -46,6 +46,9 @@ k = 1.75;
 % Parameter governing the number of firms in each sector
 M = 350; 
 
+% Productivities for added firms
+epsilon = 1e-10;
+
 % Wages
 wR = 1.13;      
 w = 1;          
@@ -67,7 +70,7 @@ S = S_init*S_multiple;                                  % Number of sectors used
 % Assign CD-shares across sectors 
 ALPHA = cdshares_init;      
 
-for iloop = 1:S_multiple-1;
+for iloop = 1:S_multiple-1
     ALPHA = [ALPHA;cdshares_init(randperm(S_init))];
 end
 ALPHA = ALPHA/S_multiple;
@@ -113,6 +116,7 @@ ZFL = phiF(:,~small);
 
 RTS = exp(mu_H(small));
 RTL = exp(mu_H(~small));
+RT = exp(mu_H);
 %% Compute GE variables
    
 % Guess home and foreign output Y
@@ -132,14 +136,22 @@ YF0=2*Y0;
 paretonb = 75;
 
 % Multiple of sectors (Total # of sectors = 117*4*scale)
-scale = 1;
+scale = 1; %22;
 
 % Run PE model
-[ALPHA,PHIFVEC,LAMBDAFVEC,AdditionalMom]=PEmoments(sigma,F,tau,theta,muT,sigmaT,w,wF,Y,YF,vMU,BER,paretonb,scale);
+[ALPHA,PHIFVEC,LAMBDAFVEC,KVEC,KFVEC,KHH,KFH,MH,RT,AdditionalMom]=PEmoments(sigma,F,tau,theta,muT,sigmaT,w,wF,Y,YF,vMU,BER,paretonb,scale);
 
+% Compute Verification Moments for Robustness 2
+
+PKM = sum(KHH./MH'==1)/(S*scale);
+EKM = mean(KHH./MH');
+Corra = corrcoef(ALPHA',KHH./MH');
+CorrT = corrcoef(RT,KHH./MH');
+
+VerificationMom = [PKM,EKM,Corra(1,2),CorrT(1,2)];
 %% Save moments
 
-save('Results/Moments_seed1_grid6','StandardMom','AdditionalMom')
+save('Results/Moments_seed1_grid2','StandardMom','AdditionalMom','VerificationMom')
 
 %% Generate Graphs
 
@@ -153,6 +165,7 @@ VPCT(1,2) = mean(LAMBDAFVEC(LAMBDAFVEC<LPCT(1))>1.5*PHIFVEC(LAMBDAFVEC<LPCT(1)))
 VPCT(1,3) = mean(LAMBDAFVEC(LAMBDAFVEC<LPCT(1))>2*PHIFVEC(LAMBDAFVEC<LPCT(1)));     % Red bar
 VPCT(1,4) = mean(LAMBDAFVEC(LAMBDAFVEC<LPCT(1))-PHIFVEC(LAMBDAFVEC<LPCT(1)));       % Blue bar (b)
 VPCT(1,5) = sum(ALPHA(LAMBDAFVEC<LPCT(1))'.*LAMBDAFVEC(LAMBDAFVEC<LPCT(1)));         % Red bar (b)
+% VPCT(1,:) = zeros(1,5);
 for ip=2:NP-1
     VPCT(ip,1) = mean(LAMBDAFVEC(LAMBDAFVEC>=LPCT(ip-1)&LAMBDAFVEC<LPCT(ip))>1.33*PHIFVEC(LAMBDAFVEC>=LPCT(ip-1)&LAMBDAFVEC<LPCT(ip)));
     VPCT(ip,2) = mean(LAMBDAFVEC(LAMBDAFVEC>=LPCT(ip-1)&LAMBDAFVEC<LPCT(ip))>1.5*PHIFVEC(LAMBDAFVEC>=LPCT(ip-1)&LAMBDAFVEC<LPCT(ip)));
@@ -179,13 +192,13 @@ bar(VPCT(:,2),'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33) %'r','FaceAlph
 bar(VPCT(:,3),'FaceColor','[0.900, 0.20, 0.05]') %'b','FaceAlpha',0.5)%,'BarWidth', 1)
 lgd = legend('$1/4$ Granular','$1/3$ Granular', '$1/2$ Granular');
 set(lgd,'box','off','location','northwest','interpreter','latex','fontsize',20)
-xlim([0.5, 10.55])
-ylim([0, .3])
+% xlim([0.5, 10.55])
+% ylim([0, .3])
 xlabel('Deciles of sectors, by export intensity $\Lambda_z^\ast$','interpreter','latex','fontsize',20)
 set(gca,'FontSize',16)
-set(gca,'xtick',[0.5:1:9.5 10.55])
+% set(gca,'xtick',[0.5:1:9.5 10.55])
 set(gca,'xticklabel',[0 round(LPCT'*100)/100 1.00])
-set(gca,'ytick',[0.05:.05:.25])
+% set(gca,'ytick',[0.05:.05:.25])
 saveas(gcf,'Results/Graphs/Figure_1a','epsc')
 
 % Figure 1(b)
@@ -200,7 +213,30 @@ set(lgd,'box','off','location','northwest','interpreter','latex','fontsize',20)
 xlim([0.5, 10.55])
 xlabel('Deciles of sectors, by export intensity $\Lambda_z^\ast$','interpreter','latex','fontsize',20)
 set(gca,'FontSize',16)
-set(gca,'xtick',[0.5:1:9.5 10.55])
+% set(gca,'xtick',[0.5:1:9.5 10.55])
 set(gca,'xticklabel',[0 round(LPCT'*100)/100 1.00])
-set(gca,'ytick',[-0.05 0:.1:.3])
+% set(gca,'ytick',[-0.05 0:.1:.3])
 saveas(gcf,'Results/Graphs/Figure_1b','epsc')
+
+% Generate the two verification histograms
+
+figure(3)
+hold on 
+% edges = [0:20:900];
+h = histogram(KHH./MH',20);
+title('Distribution of $\tilde{K}_z/M_z$','interpreter','latex')
+xlabel('$\tilde{K}_z/M_z$','interpreter','latex')
+ylabel('Frequency')
+saveas(gcf,'Results/Graphs/hist_KM.png')
+hold off
+
+
+figure(4)
+hold on 
+% edges = [0:20:900];
+h = histogram(KFH./MF',20);
+title('Distribution of $\tilde{K}_z^*/M_z^*$','interpreter','latex')
+xlabel('$\tilde{K}_z^*/M_z^*$','interpreter','latex')
+ylabel('Frequency')
+saveas(gcf,'Results/Graphs/hist_KMstar.png')
+hold off
