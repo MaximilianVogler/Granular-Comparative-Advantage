@@ -1,4 +1,4 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS,Paretovec,varphi_bar] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
+function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS,Paretovec,varphi_bar,DVEC] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -136,6 +136,7 @@ MUHVEC=sum((1-IOTAH).*SHM./MUHM);
 MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           
 LAMBDAHVEC=sum(IOTAH.*SHM); % realized import share vector in home
 LAMBDAFVEC=sum(IOTAF.*SFM);
+DVEC=sum((1-IOTAH).*SHM);   % domestic sales of domestic firms
 
 % Auxiliary variables for moments
 KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector

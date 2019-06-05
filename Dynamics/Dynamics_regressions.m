@@ -32,7 +32,6 @@ mu = -theta*nu^2/2;
 rho = 0;
 
 
-
 %% Setup of model
 
 % Initialize random number generator and set seed
@@ -57,7 +56,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 1;
+scale = 3/4; %21;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -111,8 +110,8 @@ ZFL=UFL.^(-1/theta);
 
 %% Solve for lower productivity threshold 
 
-% % Compute PE given initial productivities
-[~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC_0,PHIFVEC_0,~,varphi_BB,~,~]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
+% % Compute GE given initial productivities
+[~,~,~,~,~,~,~,~,~,TOP1_0,TOP3_0,~,~,~,LAMBDAFVEC_0,PHIFVEC_0,~,varphi_BB,XVEC_0,DVEC_0]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
 disp('Loop 0 is finished')
 % save('Data/GE_Results','bestParams','Y','YF','LF','varphi_BB')
 
@@ -162,20 +161,6 @@ varphi_bar_HS = (1/theta)*log(RT(small))+net_intercept_HS;
 % AAA = log(min(varphi(1:2,index_HS)))*ones(1,Nsmall);
 % BBB = log(min(ZHS(:,index_HS)))*ones(1,Nsmall);
 
-figure(1);
-hold on
-scatter(log(RT_sorted(1:Nsmall)),log(min(ZHS)));
-scatter(log(RT_sorted(1:Nsmall)),log(min(varphi(1:2,1:Nsmall))));
-scatter(log(RT_sorted(1:Nsmall)),varphi_bar_HS);
-% % scatter(log(RT_sorted(1:Nsmall)),(1/theta)*log(RT_sorted(1:Nsmall)))
-% scatter(log(RT_sorted(1:Nsmall)),AAA);
-% scatter(log(RT_sorted(1:Nsmall)),BBB);
-lgd = legend('Log of minimum $\varphi_z$','Log of minimum active $\varphi_z$','$\underline{\varphi}_z$');
-set(lgd,'location','northwest','interpreter','latex','fontsize',10)
-xlabel('$\log(T_z)$','interpreter','latex')
-title('Small sectors Home')
-saveas(gcf,'Results/Varphi_bar/small_home.png')
-
 
 % Large Sectors Home
 [value_HL,~] = min(abs(log(min(varphi(1:2,Nsmall+1:end)))-log(min(ZHL))));
@@ -183,17 +168,6 @@ saveas(gcf,'Results/Varphi_bar/small_home.png')
 gross_intercept = log(min(ZHL(:,zero_index_HL)));
 net_intercept_HL = gross_intercept + 0.5*value_HL;
 varphi_bar_HL = (1/theta)*log(RT(~small))+net_intercept_HL;
-
-figure(2);
-hold on
-scatter(log(RT_sorted(Nsmall+1:end)),log(min(ZHL)));
-scatter(log(RT_sorted(Nsmall+1:end)),log(min(varphi(1:2,Nsmall+1:end))));
-scatter(log(RT_sorted(Nsmall+1:end)),varphi_bar_HL);
-lgd = legend('Log of minimum $\varphi_z$','Log of minimum active $\varphi_z$','$\underline{\varphi}_z$');
-set(lgd,'location','northwest','interpreter','latex','fontsize',10)
-xlabel('$\log(T_z)$','interpreter','latex')
-title('Large sectors Home')
-saveas(gcf,'Results/Varphi_bar/large_home.png')
 
 
 % Small Sectors Foreign
@@ -203,17 +177,6 @@ gross_intercept = log(min(ZFS(:,zero_index_FS)));
 net_intercept_FS = gross_intercept + 0.5*value_FS;
 varphi_bar_FS = net_intercept_FS*ones(1,Nsmall);
 
-figure(3);
-hold on
-scatter(log(RT_sorted(1:Nsmall)),log(min(ZFS)));
-scatter(log(RT_sorted(1:Nsmall)),log(min(varphi(3:4,1:Nsmall))));
-scatter(log(RT_sorted(1:Nsmall)),varphi_bar_FS);
-lgd = legend('Log of minimum $\varphi_z$','Log of minimum active $\varphi_z$','$\underline{\varphi}_z$');
-set(lgd,'location','northwest','interpreter','latex','fontsize',10)
-xlabel('$\log(T_z)$','interpreter','latex')
-title('Small sectors Foreign')
-saveas(gcf,'Results/Varphi_bar/small_foreign.png')
-
 
 % Large Sectors Foreign
 [value_FL,~] = min(abs(log(min(varphi(3:4,Nsmall+1:end)))-log(min(ZFL))));
@@ -222,18 +185,8 @@ gross_intercept = log(min(ZFL(:,zero_index_FL)));
 net_intercept_FL = gross_intercept + 0.5*value_FL;
 varphi_bar_FL = net_intercept_FL*ones(1,Nlarge);
 
-figure(4);
-hold on
-scatter(log(RT_sorted(Nsmall+1:end)),log(min(ZFL)));
-scatter(log(RT_sorted(Nsmall+1:end)),log(min(varphi(3:4,Nsmall+1:end))));
-scatter(log(RT_sorted(Nsmall+1:end)),varphi_bar_FL);
-lgd = legend('Log of minimum $\varphi_z$','Log of minimum active $\varphi_z$','$\underline{\varphi}_z$');
-set(lgd,'location','northwest','interpreter','latex','fontsize',10)
-xlabel('$\log(T_z)$','interpreter','latex')
-title('Large sectors Foreign')
-saveas(gcf,'Results/Varphi_bar/large_foreign.png')
 
-% Compute \underline\varphi for each sector for home and foreign, these are
+% Compute \underline{\varphi} for each sector for home and foreign, these are
 % the relevant vectors that we will use from now on.
 varphi_bar_H = zeros(1,S);
 varphi_bar_F = zeros(1,S);
@@ -289,15 +242,27 @@ VB_FL = repmat(varphi_bar_F(1,~small),ZFL_length,1);
 rng(aseed);
 
 % Years that are actually being recorded
-RECORD = [20,50];
+RECORD = 1:11;
 R_length = length(RECORD);
 T = RECORD(end);
 
-LAMBDAFVEC_t = zeros(R_length+1,S);
-LAMBDAFVEC_t(1,:) = LAMBDAFVEC_0;
+% LAMBDAFVEC_t = zeros(R_length+1,S);
+% LAMBDAFVEC_t(1,:) = LAMBDAFVEC_0;
+% 
+% PHIFVEC_t = zeros(R_length+1,S);
+% PHIFVEC_t(1,:) = PHIFVEC_0;
 
-PHIFVEC_t = zeros(R_length+1,S);
-PHIFVEC_t(1,:) = PHIFVEC_0;
+XVEC_t = zeros(S,R_length+1);
+XVEC_t(:,1) = XVEC_0;
+
+DVEC_t = zeros(S,R_length+1);
+DVEC_t(:,1) = DVEC_0;
+
+TOP1_t = zeros(S,R_length+1);
+TOP1_t(:,1) = TOP1_0;
+
+TOP3_t = zeros(S,R_length+1);
+TOP3_t(:,1) = TOP3_0;
 
 % Determine productivity draws
 su = sqrt(rho*nu^2);
@@ -306,6 +271,7 @@ sv = sqrt(nu^2*(1-rho));
 counter = 1;
 
 for t=1:T
+    
     uz_HS = repmat(randn(1,S),ZHS_length,1);
     uz_HL = repmat(randn(1,S),ZHL_length,1);
     uz_FS = repmat(randn(1,S),ZFS_length,1);
@@ -320,7 +286,6 @@ for t=1:T
     eps_HL = su*uz_HL+sv*vz_HL;
     eps_FS = su*uz_FS+sv*vz_FS;
     eps_FL = su*uz_FL+sv*vz_FL;
-
 %     ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+nu*randn(length(ZHS(~inactive_HS)),1)));
 % %     ZHS_Save =[ZHS_Save,ZHS(:)];
 %     ZHL(~inactive_HL) = exp(VB_HL(~inactive_HL)+abs(log(ZHL(~inactive_HL))-VB_HL(~inactive_HL)+mu+nu*randn(length(ZHL(~inactive_HL)),1)));
@@ -336,117 +301,34 @@ for t=1:T
     % If the year is part of RECORD, record PE results
     if any(RECORD==t)
         counter = counter+1;
-        [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,~,~]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
-        LAMBDAFVEC_t(counter,:) = LAMBDAFVEC;
-        PHIFVEC_t(counter,:) = PHIFVEC;
+        [~,~,~,~,~,~,~,~,~,TOP1,TOP3,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,XVEC,DVEC]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
+%         LAMBDAFVEC_t(counter,:) = LAMBDAFVEC;
+%         PHIFVEC_t(counter,:) = PHIFVEC;
+        XVEC_t(:,counter) = XVEC;
+        DVEC_t(:,counter) = DVEC;
+        TOP1_t(:,counter) = TOP1;
+        TOP3_t(:,counter) = TOP3;
         disp(['Loop ',num2str(t),' is finished']);
     end
     
 end
 
-%% MEAN REVERSION
+%% Generate data for Stata
 
-% GAMMAF
-GAMMAFVEC_t = LAMBDAFVEC_t-PHIFVEC_t;
+% Identifier
+ID = (1:S)';
+ID = repmat(ID,T+1,1);
+YEAR = repmat(1997:1997+T,S,1);
 
-% Delta LAMBDAF
-DELTA_LAMBDAFVEC_t = LAMBDAFVEC_t-repmat(LAMBDAFVEC_t(1,:),R_length+1,1);
-
-% Prepare plotting variables
-ptiles = 10;
-LPCT = prctile(GAMMAFVEC_t(1,:),[1/ptiles:1/ptiles:1-1/ptiles]*100)';
-
-mean_20 = zeros(ptiles,1);         
-mean_50 = zeros(ptiles,1);
-
-min_20 = zeros(ptiles,1);
-min_50 = zeros(ptiles,1);
-
-max_20 = zeros(ptiles,1);
-max_50 = zeros(ptiles,1);
-
-DELTA_20 = DELTA_LAMBDAFVEC_t(2,:);
-DELTA_50 = DELTA_LAMBDAFVEC_t(3,:);
-
-mean_20(1) = mean(DELTA_20(GAMMAFVEC_t(1,:)<LPCT(1)));
-mean_50(1) = mean(DELTA_50(GAMMAFVEC_t(1,:)<LPCT(1)));
-min_20(1) = prctile(DELTA_20(GAMMAFVEC_t(1,:)<LPCT(1)),10);
-min_50(1) = prctile(DELTA_50(GAMMAFVEC_t(1,:)<LPCT(1)),10);
-max_20(1) = prctile(DELTA_20(GAMMAFVEC_t(1,:)<LPCT(1)),90);
-max_50(1) = prctile(DELTA_50(GAMMAFVEC_t(1,:)<LPCT(1)),90);
-for i=2:ptiles-1
-   mean_20(i) = mean(DELTA_20(GAMMAFVEC_t(1,:)<LPCT(i) & GAMMAFVEC_t(1,:)>=LPCT(i-1))); 
-   mean_50(i) = mean(DELTA_50(GAMMAFVEC_t(1,:)<LPCT(i) & GAMMAFVEC_t(1,:)>=LPCT(i-1))); 
-   min_20(i) = prctile(DELTA_20(GAMMAFVEC_t(1,:)<LPCT(i) & GAMMAFVEC_t(1,:)>=LPCT(i-1)),10); 
-   min_50(i) = prctile(DELTA_50(GAMMAFVEC_t(1,:)<LPCT(i) & GAMMAFVEC_t(1,:)>=LPCT(i-1)),10); 
-   max_20(i) = prctile(DELTA_20(GAMMAFVEC_t(1,:)<LPCT(i) & GAMMAFVEC_t(1,:)>=LPCT(i-1)),90); 
-   max_50(i) = prctile(DELTA_50(GAMMAFVEC_t(1,:)<LPCT(i) & GAMMAFVEC_t(1,:)>=LPCT(i-1)),90); 
-end
-mean_20(ptiles) = mean(DELTA_20(GAMMAFVEC_t(1,:)>=LPCT(ptiles-1)));
-mean_50(ptiles) = mean(DELTA_50(GAMMAFVEC_t(1,:)>=LPCT(ptiles-1)));
-min_20(ptiles) = prctile(DELTA_20(GAMMAFVEC_t(1,:)>=LPCT(ptiles-1)),10);
-min_50(ptiles) = prctile(DELTA_50(GAMMAFVEC_t(1,:)>=LPCT(ptiles-1)),10);
-max_20(ptiles) = prctile(DELTA_20(GAMMAFVEC_t(1,:)>=LPCT(ptiles-1)),90);
-max_50(ptiles) = prctile(DELTA_50(GAMMAFVEC_t(1,:)>=LPCT(ptiles-1)),90);
+DATA = [ID,YEAR(:),XVEC_t(:)*YF,DVEC_t(:)*Y,TOP1_t(:),TOP3_t(:)];
+fname = sprintf('Results/Data/regdata_%d',S);
+fname2 = sprintf('Results/Data/regdata_%d.csv',S);
+save(fname,'DATA');
+title = {'ID','Year','X','D','TOP1','TOP3'};
+T = cell2table(num2cell(DATA),'VariableNames',title);
+writetable(T,fname2);
 
 
-% Plot mean reversion graph
-figure(5)
-bar(mean_50,'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33)
-hold on
-bar(mean_20,'FaceColor','[0.900, 0.20, 0.05]')%,'FaceAlpha',0.65)
-lgd = legend('50 years','20 years');
-set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
-% ylim([0, .25])
-% set(gca,'ytick',[0.05:.05:.25])
-xlim([0.5, 10.55])
-ylim([-.08, .065])
-xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ylabel('Expected change in export share, $\Delta \Lambda_z^\ast$','interpreter','latex','fontsize',20)
-set(gca,'FontSize',16)
-set(gca,'xtick',[0.5:1:9.5 10.55])
-LPCT0 = LPCT;
-LPCT0(5)=0;
-set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-saveas(gcf,'Results/mean_reversion.png')
-
-figure(6)
-hold on
-bar(mean_20,'FaceColor','[0.900, 0.20, 0.05]')%,'FaceAlpha',0.65)
-errorbar(1:10,mean_20,min_20,max_20,'.','LineWidth',2,'Color',[0, 0.4470, 0.7410])
-lgd = legend('20 years');
-set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
-% ylim([0, .25])
-% set(gca,'ytick',[0.05:.05:.25])
-xlim([0.5, 10.55])
-ylim([-.2, .2])
-xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ylabel('Expected change in export share, $\Delta \Lambda_z^\ast$','interpreter','latex','fontsize',20)
-set(gca,'FontSize',16)
-set(gca,'xtick',[0.5:1:9.5 10.55])
-LPCT0 = LPCT;
-LPCT0(5)=0;
-set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-saveas(gcf,'Results/mean_reversion_20.png')
-
-figure(7)
-hold on
-bar(mean_50,'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33)
-errorbar(1:10,mean_50,min_50,max_50,'.','LineWidth',2,'Color',[0.8500, 0.3250, 0.0980])
-lgd = legend('50 years');
-set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
-% ylim([0, .25])
-% set(gca,'ytick',[0.05:.05:.25])
-xlim([0.5, 10.55])
-ylim([-.3, .3])
-xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ylabel('Expected change in export share, $\Delta \Lambda_z^\ast$','interpreter','latex','fontsize',20)
-set(gca,'FontSize',16)
-set(gca,'xtick',[0.5:1:9.5 10.55])
-LPCT0 = LPCT;
-LPCT0(5)=0;
-set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-saveas(gcf,'Results/mean_reversion_50.png')
 
 
 
