@@ -18,29 +18,39 @@ eststo clear
 ** Table 1
 
 * Column 1
-eststo CS_2005: reg log_x top1 log_d if year==2005, vce(cluster id)
+eststo CS_2005: reg log_x top1 log_d if year==2005
 
 * Column 3
-xtset id year
-eststo Panel: xtreg log_x top1 log_d i.year , fe vce(cluster id)
+eststo Panel: reg log_x top1 log_d i.year , vce(cluster id)
+
+* Column 3'
+eststo Panel_prime: reg log_x top1 i.year , vce(cluster id)
 
 * Column 5
-* xtreg log_x top1 i.year i.id, fe vce(cluster id)
+xtset id year
+eststo Dynamics_1: xtreg log_x top1 i.year, fe 
 
 * Column 6
-eststo Dynamics: xtreg d.log_x d.top1, vce(cluster id)
+eststo Dynamics_2: reg d.log_x d.top1
 
-esttab using "table_3", replace star(* 0.10 ** 0.05 *** 0.01) booktabs b(a2) label
+keep if year == 1997 | year == 2008
+sort id year
+gen Delta_log_x = log_x[_n+1]-log_x[_n]
+gen Delta_top_1 = top1[_n+1]-top1[_n]
+keep if year == 1997
+
+* Column 8
+eststo Dynamics_3: reg Delta_log_x Delta_top_1
+
+esttab using "table_3_big", replace star(* 0.10 ** 0.05 *** 0.01) booktabs b(a2) label
+
+
 ** Table 2
+
 
 eststo clear
 
 * Column 1
-keep if year == 1997 | year == 2008
-sort id year
-gen Delta_log_x = log_x[_n+1]-log_x[_n]
-keep if year == 1997
-
 eststo OLS_1: reg Delta_log_x log_x log_d 
 
 * Column 2
@@ -55,4 +65,4 @@ eststo IV_1: ivregress 2sls Delta_log_x log_d (log_x = top1)
 * Column 5
 eststo IV_2: ivregress 2sls Delta_log_x (log_x = top1)
 
-esttab using "table_4", replace star(* 0.10 ** 0.05 *** 0.01) booktabs b(a2) label
+esttab using "table_4_big", replace star(* 0.10 ** 0.05 *** 0.01) booktabs b(a2) label

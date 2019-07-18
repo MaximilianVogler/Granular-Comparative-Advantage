@@ -56,7 +56,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 3/4; %21;
+scale = 21; %3/4; %21;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -242,7 +242,7 @@ VB_FL = repmat(varphi_bar_F(1,~small),ZFL_length,1);
 rng(aseed);
 
 % Years that are actually being recorded
-RECORD = 1:11;
+RECORD = [1,2,5,10,20,50];
 R_length = length(RECORD);
 T = RECORD(end);
 
@@ -317,12 +317,12 @@ end
 
 % Identifier
 ID = (1:S)';
-ID = repmat(ID,T+1,1);
-YEAR = repmat(1997:1997+T,S,1);
+ID = repmat(ID,length([1,2,5,10,20,50])+1,1);
+YEAR = repmat([0,1,2,5,10,20,50],S,1);
 
 DATA = [ID,YEAR(:),XVEC_t(:)*YF,DVEC_t(:)*Y,TOP1_t(:),TOP3_t(:)];
-fname = sprintf('Results/Data/regdata_%d',S);
-fname2 = sprintf('Results/Data/regdata_%d.csv',S);
+fname = sprintf('Results/Data/regdata_%d_extra',S);
+fname2 = sprintf('Results/Data/regdata_%d_extra.csv',S);
 save(fname,'DATA');
 title = {'ID','Year','X','D','TOP1','TOP3'};
 T = cell2table(num2cell(DATA),'VariableNames',title);
