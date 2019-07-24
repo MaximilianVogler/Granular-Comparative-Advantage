@@ -18,20 +18,21 @@ load('GE_Results')
 muT=bestParams(1);
 sigmaT=bestParams(2);
 tau=bestParams(3);
-kappa=bestParams(4);
-f=bestParams(5);
+theta=bestParams(4);
+F=bestParams(5);
 
 sigma=5;
-theta=kappa*(sigma-1);
-f=f*4.93*.43e-5;
-F=f/sigma;
+% theta=kappa*(sigma-1);
+% f=f*4.93*.43e-5;
+% F=f/sigma;
 
 % New parameters for dynamic model
-nu = 0.13475;
+nu = 0.05225;
 mu = -theta*nu^2/2;
 rho = 0;
 
-
+Y0=123;
+YF0=2*Y0;
 
 %% Setup of model
 
@@ -57,7 +58,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 1/4;
+scale = 21;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -112,6 +113,8 @@ ZFL=UFL.^(-1/theta);
 %% Solve for lower productivity threshold 
 
 % % Compute PE given initial productivities
+% [~,Y,YF,LF,~,~,~,~,~,~,LAMBDAFVEC_0,varphi_BB]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER,0);
+
 [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC_0,PHIFVEC_0,~,varphi_BB,~,~]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
 disp('Loop 0 is finished')
 % save('Data/GE_Results','bestParams','Y','YF','LF','varphi_BB')
@@ -296,6 +299,8 @@ T = RECORD(end);
 LAMBDAFVEC_t = zeros(R_length+1,S);
 LAMBDAFVEC_t(1,:) = LAMBDAFVEC_0;
 
+XVEC_t = zeros(R_length,S);
+
 PHIFVEC_t = zeros(R_length+1,S);
 PHIFVEC_t(1,:) = PHIFVEC_0;
 
@@ -336,9 +341,10 @@ for t=1:T
     % If the year is part of RECORD, record PE results
     if any(RECORD==t)
         counter = counter+1;
-        [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,~,~,DSHM_small,DSHM_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
+        [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,XVEC,~,DSHM_small,DSHM_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
         LAMBDAFVEC_t(counter,:) = LAMBDAFVEC;
         PHIFVEC_t(counter,:) = PHIFVEC;
+        XVEC_t(counter-1,:) = XVEC; 
         save_share_small{t} = DSHM_small;
         save_share_large{t} = DSHM_large;
         disp(['Loop ',num2str(t),' is finished']);
@@ -451,27 +457,166 @@ end
 % saveas(gcf,'Results/mean_reversion_50.png')
 
 
-%% Computing SR and LR persistence (Table 4)
+%% Compute Firm Dynamics Moments (Table 4)
 
-keepstd = zeros(S,T-1)*NaN;
-keepcorr = zeros(S,1)*NaN;
+keepstd_1 = zeros(S,T-1)*NaN;
+keepstd_2 = zeros(S,T-1)*NaN;
+keepstd_3 = zeros(S,T-1)*NaN;
+keepstd_4 = zeros(S,T-1)*NaN;
+keepstd_5 = zeros(S,T-1)*NaN;
+keepstd_6 = zeros(S,T-1)*NaN;
+keepstd_7 = zeros(S,T-1)*NaN;
+keepstd_8 = zeros(S,T-1)*NaN;
+keepstd_9 = zeros(S,T-1)*NaN;
+keepcorr_10 = zeros(S,1)*NaN;
+keepcorr_11 = zeros(S,1)*NaN;
+keepcorr_12 = zeros(S,1)*NaN;
+keepcorr_13 = zeros(S,1)*NaN;
+keepcorr_14 = zeros(S,1)*NaN;
+keepcorr_15 = zeros(S,1)*NaN;
+
+avg_ms_int = zeros(S,1);
+avg_ms_50_int = zeros(S,1);
+avg_ms_80_int = zeros(S,1);
+for z=1:Nsmall
+    idx_50_small = save_share_small{1}(:,z)>=quantile(save_share_small{1}(save_share_small{1}(:,z)>0,z),0.5);
+    idx_80_small = save_share_small{1}(:,z)>=quantile(save_share_small{1}(save_share_small{1}(:,z)>0,z),0.8);
+    avg_ms_int(z) = mean(save_share_small{1}(save_share_small{1}(:,z)>0,z));
+    avg_ms_50_int(z) = mean(save_share_small{1}(idx_50_small,z));
+    avg_ms_80_int(z) = mean(save_share_small{1}(idx_80_small,z));
+end
+for z=1:Nlarge
+    idx_50_large = save_share_large{1}(:,z)>=quantile(save_share_large{1}(save_share_large{1}(:,z)>0,z),0.5);
+    idx_80_large = save_share_large{1}(:,z)>=quantile(save_share_large{1}(save_share_large{1}(:,z)>0,z),0.8);
+    avg_ms_int(Nsmall+z) = mean(save_share_large{1}(save_share_large{1}(:,z)>0,z));
+    avg_ms_50_int(Nsmall+z) = mean(save_share_large{1}(idx_50_large,z));
+    avg_ms_80_int(Nsmall+z) = mean(save_share_large{1}(idx_80_large,z));
+end
+avg_ms = nanmean(avg_ms_int);
+avg_ms_50 = nanmean(avg_ms_50_int);
+avg_ms_80 = nanmean(avg_ms_80_int);
+    
 % First the small sectors
 for z=1:Nsmall
     
-    % Standard deviations across firms within time-sector
+    % Standard deviation across firms within time-sector (Moment 1)
     for tt=1:T-1
         a2 = save_share_small{tt+1}(:,z);
         a1 = save_share_small{tt}(:,z);
         idx = (a2>0).*(a1>0);               % Only if firm exists in both periods
-        keepstd(z,tt) = std(a2(idx>0)-a1(idx>0));
+        keepstd_1(z,tt) = std(a2(idx>0)-a1(idx>0));
     end
     
-    % Correlation over firms
+    % Standard deviation across firms (top 20%) time-sector (Moment 2)
+    for tt=1:T-1
+       a2 = save_share_small{tt+1}(idx_80_small,z);
+       a1 = save_share_small{t}(idx_80_small,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_2(z,tt) = std(a2(idx>0)-a1(idx>0));
+    end
+    
+    % Standard deviation across firms (top 50%) time-sector (Moment 3)
+    for tt=1:T-1
+       a2 = save_share_small{tt+1}(idx_50_small,z);
+       a1 = save_share_small{t}(idx_50_small,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_3(z,tt) = std(a2(idx>0)-a1(idx>0));
+    end
+    
+     % Standard deviation of log across firms within time-sector (Moment 4)
+    for tt=1:T-1
+        a2 = save_share_small{tt+1}(:,z);
+        a1 = save_share_small{tt}(:,z);
+        idx = (a2>0).*(a1>0);               % Only if firm exists in both periods
+        keepstd_4(z,tt) = std(log(a2(idx>0))-log(a1(idx>0)));
+    end
+    
+    % Standard deviation of log across firms (top 20%) time-sector (Moment 5)
+    for tt=1:T-1
+       a2 = save_share_small{tt+1}(idx_80_small,z);
+       a1 = save_share_small{t}(idx_80_small,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_5(z,tt) = std(log(a2(idx>0))-log(a1(idx>0)));
+    end
+    
+    % Standard deviation of log across firms (top 50%) time-sector (Moment 6)
+    for tt=1:T-1
+       a2 = save_share_small{tt+1}(idx_50_small,z);
+       a1 = save_share_small{t}(idx_50_small,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_6(z,tt) = std(log(a2(idx>0))-log(a1(idx>0)));
+    end
+ 
+    % Normalized standard deviation across firms within time-sector (Moment 7)
+    for tt=1:T-1
+        a2 = save_share_small{tt+1}(:,z);
+        a1 = save_share_small{tt}(:,z);
+        idx = (a2>0).*(a1>0);               % Only if firm exists in both periods
+        keepstd_7(z,tt) = std((a2(idx>0)-a1(idx>0)))/avg_ms;
+    end
+    
+    % Normalized standard deviation across firms (top 20%) time-sector (Moment 8)
+    for tt=1:T-1
+       a2 = save_share_small{tt+1}(idx_80_small,z);
+       a1 = save_share_small{t}(idx_80_small,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_8(z,tt) = std(a2(idx>0)-a1(idx>0))/avg_ms_80;
+    end
+    
+    % Normalized standard deviation across firms (top 50%) time-sector (Moment 9)
+    for tt=1:T-1
+       a2 = save_share_small{tt+1}(idx_50_small,z);
+       a1 = save_share_small{t}(idx_50_small,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_9(z,tt) = std(a2(idx>0)-a1(idx>0))/avg_ms_50;
+    end
+
+    % Correlation over firms (Moment 10)
     a0 = save_share_small{1}(:,z);
     aT = save_share_small{T}(:,z);
     idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
     if sum(idx)>1
-        keepcorr(z) = corr(aT(idx>0),a0(idx>0));
+        keepcorr_10(z) = corr(aT(idx>0),a0(idx>0));
+    end
+    
+    % Correlation over firms (top 20%) (Moment 11)
+    a0 = save_share_small{1}(idx_80_small,z);
+    aT = save_share_small{T}(idx_80_small,z);
+    idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+    if sum(idx)>1
+        keepcorr_11(z) = corr(aT(idx>0),a0(idx>0));
+    end
+    
+    % Correlation over firms (top 50%) (Moment 12)
+    a0 = save_share_small{1}(idx_50_small,z);
+    aT = save_share_small{T}(idx_50_small,z);
+    idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+    if sum(idx)>1
+        keepcorr_12(z) = corr(aT(idx>0),a0(idx>0));
+    end
+    
+    % Correlation over firms log (Moment 13)
+    a0 = save_share_small{1}(:,z);
+    aT = save_share_small{T}(:,z);
+    idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+    if sum(idx)>1
+        keepcorr_13(z) = corr(log(aT(idx>0)),log(a0(idx>0)));
+    end
+    
+    % Correlation over firms log (top 20%) (Moment 14)
+    a0 = save_share_small{1}(idx_80_small,z);
+    aT = save_share_small{T}(idx_80_small,z);
+    idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+    if sum(idx)>1
+        keepcorr_14(z) = corr(log(aT(idx>0)),log(a0(idx>0)));
+    end
+    
+    % Correlation over firms log (top 50%) (Moment 15)
+    a0 = save_share_small{1}(idx_50_small,z);
+    aT = save_share_small{T}(idx_50_small,z);
+    idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+    if sum(idx)>1
+        keepcorr_15(z) = corr(log(aT(idx>0)),log(a0(idx>0)));
     end
 end
 
@@ -479,23 +624,245 @@ end
 
 for z=1:Nlarge
     
+    % Moment 1
     for tt=1:T-1
         a2 = save_share_large{tt+1}(:,z);
         a1 = save_share_large{tt}(:,z);
         idx = (a2>0).*(a1>0);
-        keepstd(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0));
+        keepstd_1(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0));
     end
     
+    % Moment 2
+    for tt=1:T-1
+       a2 = save_share_large{tt+1}(idx_80_large,z);
+       a1 = save_share_large{t}(idx_80_large,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_2(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0));
+    end
+    
+    % Moment 3
+    for tt=1:T-1
+       a2 = save_share_large{tt+1}(idx_50_large,z);
+       a1 = save_share_large{t}(idx_50_large,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_3(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0));
+    end
+    
+    % Moment 4
+    for tt=1:T-1
+        a2 = save_share_large{tt+1}(:,z);
+        a1 = save_share_large{tt}(:,z);
+        idx = (a2>0).*(a1>0);
+        keepstd_4(Nsmall+z,tt) = std(log(a2(idx>0))-log(a1(idx>0)));
+    end
+    
+    % Moment 5
+    for tt=1:T-1
+       a2 = save_share_large{tt+1}(idx_80_large,z);
+       a1 = save_share_large{t}(idx_80_large,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_5(Nsmall+z,tt) = std(log(a2(idx>0))-log(a1(idx>0)));
+    end
+    
+    % Moment 6
+    for tt=1:T-1
+       a2 = save_share_large{tt+1}(idx_50_large,z);
+       a1 = save_share_large{t}(idx_50_large,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_6(Nsmall+z,tt) = std(log(a2(idx>0))-log(a1(idx>0)));
+    end
+    
+    % Moment 7
+    for tt=1:T-1
+        a2 = save_share_large{tt+1}(:,z);
+        a1 = save_share_large{tt}(:,z);
+        idx = (a2>0).*(a1>0);
+        keepstd_7(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0))/avg_ms;
+    end
+    
+    % Moment 8
+    for tt=1:T-1
+       a2 = save_share_large{tt+1}(idx_80_large,z);
+       a1 = save_share_large{t}(idx_80_large,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_8(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0))/avg_ms_80;
+    end
+    
+    % Moment 9
+    for tt=1:T-1
+       a2 = save_share_large{tt+1}(idx_50_large,z);
+       a1 = save_share_large{t}(idx_50_large,z);
+       idx = (a2>0).*(a1>0); 
+       keepstd_9(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0))/avg_ms_50;
+    end
+    
+    % Moment 10
     a0 = save_share_large{1}(:,z);
     aT = save_share_large{T}(:,z);
     idx = (a0>0).*(aT>0);
     if sum(idx)>1
-        keepcorr(Nsmall+z) = corr(aT(idx>0),a0(idx>0));
+        keepcorr_10(Nsmall+z) = corr(aT(idx>0),a0(idx>0));
+    end
+    
+    % Moment 11
+    a0 = save_share_large{1}(idx_80_large,z);
+    aT = save_share_large{T}(idx_80_large,z);
+    idx = (a0>0).*(aT>0);
+    if sum(idx)>1
+        keepcorr_11(Nsmall+z) = corr(aT(idx>0),a0(idx>0));
+    end
+    
+    % Moment 12
+    a0 = save_share_large{1}(idx_50_large,z);
+    aT = save_share_large{T}(idx_50_large,z);
+    idx = (a0>0).*(aT>0);
+    if sum(idx)>1
+        keepcorr_12(Nsmall+z) = corr(aT(idx>0),a0(idx>0));
+    end
+    
+    % Moment 13
+    a0 = save_share_large{1}(:,z);
+    aT = save_share_large{T}(:,z);
+    idx = (a0>0).*(aT>0);
+    if sum(idx)>1
+        keepcorr_13(Nsmall+z) = corr(log(aT(idx>0)),log(a0(idx>0)));
+    end
+    
+    % Moment 14
+    a0 = save_share_large{1}(idx_80_large,z);
+    aT = save_share_large{T}(idx_80_large,z);
+    idx = (a0>0).*(aT>0);
+    if sum(idx)>1
+        keepcorr_14(Nsmall+z) = corr(log(aT(idx>0)),log(a0(idx>0)));
+    end
+    
+    % Moment 15
+    a0 = save_share_large{1}(idx_50_large,z);
+    aT = save_share_large{T}(idx_50_large,z);
+    idx = (a0>0).*(aT>0);
+    if sum(idx)>1
+        keepcorr_15(Nsmall+z) = corr(log(aT(idx>0)),log(a0(idx>0)));
     end
          
 end
 
-LR_persistence = nanmedian(keepcorr);
-SR_persistence = nanmedian(nanmedian(keepstd,2));
+mom1 = nanmedian(nanmedian(keepstd_1,2));
+mom2 = nanmedian(nanmedian(keepstd_2,2));
+mom3 = nanmedian(nanmedian(keepstd_3,2));
+mom4 = nanmedian(nanmedian(keepstd_4,2));
+mom5 = nanmedian(nanmedian(keepstd_5,2));
+mom6 = nanmedian(nanmedian(keepstd_6,2));
+mom7 = nanmedian(nanmedian(keepstd_7,2));
+mom8 = nanmedian(nanmedian(keepstd_8,2));
+mom9 = nanmedian(nanmedian(keepstd_9,2));
+mom10 = nanmedian(keepcorr_10);
+mom11 = nanmedian(keepcorr_11);
+mom12 = nanmedian(keepcorr_12);
+mom13 = nanmedian(keepcorr_13);
+mom14 = nanmedian(keepcorr_14);
+mom15 = nanmedian(keepcorr_15);
 
-DynMom = [SR_persistence,LR_persistence];
+DynMom = [mom1,mom2,mom3,mom4,mom5,mom6,mom7,mom8,mom9,mom10,mom11,mom12,mom13,mom14,mom15];
+
+%% Compute Sectoral Dynamics Moments
+
+% Create Time Fixed Effects 
+T = zeros((R_length-1)*S,R_length-1);
+for t=1:R_length-1
+    for z=1:S
+        T((z-1)*(R_length-1)+t,t) = 1;
+    end
+end
+
+% % Create Sectoral Fixed Effects
+Z = zeros((R_length-1)*S,S);
+for z=1:S
+    Z((z-1)*(R_length-1)+1:z*(R_length-1),z) = ones(R_length-1,1);
+end
+
+% Get rid of overdue FE (since we have a constant)
+T = T(:,1:end-1);
+Z = Z(:,1:end-1);
+ 
+% X_t
+X_dep = XVEC_t(2:end,:);
+
+%X_{t-1}
+X_indep = XVEC_t(1:end-1,:);
+
+% Correcting for zeros
+ind = (X_dep>0)&(X_indep>0);
+X_dep = log(X_dep(ind));
+X_indep = log(X_indep(ind));
+
+T1 = zeros(length(X_dep),R_length-2);
+for t=1:R_length-2
+    T1(:,t) = T(ind,t);
+end
+T=T1;
+
+Z1 = zeros(length(X_dep),S-1);
+for z=1:S-1
+   Z1(:,z)=Z(ind,z); 
+end
+Z=Z1;
+
+% Regression w/o fixed effects
+stats = regstats(X_dep,X_indep,'linear',{'beta','covb'});
+smom1 = stats.beta(2);
+sd = diag(sqrt(stats.covb));
+sd1 = sd(2);
+
+% Regression w/ time fixed effects
+stats = regstats(X_dep,[X_indep,T],'linear',{'beta','covb'});
+smom2 = stats.beta(2);
+sd = diag(sqrt(stats.covb));
+sd2 = sd(2);
+
+% Regression w/ sector fixed effects
+stats = regstats(X_dep,[X_indep,Z],'linear',{'beta','covb'});
+smom3 = stats.beta(2);
+sd = diag(sqrt(stats.covb));
+sd3 = sd(2);
+
+% Regression w/ time and sector fixed effects
+stats = regstats(X_dep,[X_indep,T,Z],'linear',{'beta','covb'});
+smom4 = stats.beta(2);
+sd = diag(sqrt(stats.covb));
+sd4 = sd(2);
+
+% DynMom2 = [smom1,smom2,smom3,smom4];
+% DynMom2_sd = [sd1,sd2,sd3,sd4];
+%% Generate data for Stata (verification of the above in Stata)
+ID = (1:S);
+ID = repmat(ID,R_length-1,1);
+YEAR = repmat(RECORD(2:end)',S,1);
+X_t = XVEC_t(2:end,:);
+X_t1 = XVEC_t(1:end-1,:);
+DATA = [ID(:),YEAR,X_t(:),X_t1(:)];
+fname = sprintf('Results/Data/sectoral_regdata_%d',S);
+fname2 = sprintf('Results/Data/sectoral_regdata_%d.csv',S);
+save(fname,'DATA');
+title = {'ID','Year','X_t','X_t1'};
+TT = cell2table(num2cell(DATA),'VariableNames',title);
+writetable(TT,fname2);
+
+%% 2nd class of moments
+
+X_t = XVEC_t(2:end,:);
+X_t1 = XVEC_t(1:end-1,:);
+
+sectoral_sd = zeros(R_length-1,1);
+for t=1:R_length-1
+    ind = (X_t(t,:)>0)&(X_t1(t,:)>0);
+    sectoral_sd(t) = std(log(X_t(t,ind))-log(X_t1(t,ind)));
+end
+smom5 = nanmedian(sectoral_sd);
+
+%% 3rd class of moments
+
+ind = (XVEC_t(1,:)>0)&(XVEC_t(end,:)>0);
+smom6 = corr(log(XVEC_t(1,ind))',log(XVEC_t(end,ind))');
+DynMom2 = [smom1,smom2,smom3,smom4,smom5,smom6];
+DynMom2_sd = [sd1,sd2,sd3,sd4];
+DynMom2_t = [smom1/sd1,smom2/sd2,smom3/sd3,smom4/sd4];

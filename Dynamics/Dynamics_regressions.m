@@ -56,7 +56,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 21; %3/4; %21;
+scale = 1; %3/4; %21;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.

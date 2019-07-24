@@ -1,4 +1,4 @@
-function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS,Paretovec,varphi_bar,DVEC,DSHM1] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
+function [KVEC,KFVEC,PHIHVEC,PHIFVEC,MUHVEC,MUFVEC,LAMBDAHVEC,LAMBDAFVEC,KHH,TOP1,TOP3,XS,YXS,Paretovec] = Inner_Loops(sigma,theta,F,tau,ALPHA,RT,ZH,ZF,w,wF,Y0,YF0,vMU,BER,paretonb,AddMom,S)
 
 tol=1e-2; % set tolerance level for A-B loop
 
@@ -20,9 +20,6 @@ IOTAF=(permF>MF); % find foreign/home entrants in home/foreign markets
 
 MFMH=size(MCHM,1); 
 
-% JJ are the indices that transform the sorted matrix back into the
-% original matrix
-% [~,JJ] = sort(permH);
 
 %% Constant Markup
 % Set home markups/shares/entry in CMU case
@@ -138,17 +135,10 @@ MUHVEC=sum((1-IOTAH).*SHM./MUHM);
 MUFVEC=sum((1-IOTAF).*SFM./MUFM);                                           
 LAMBDAHVEC=sum(IOTAH.*SHM); % realized import share vector in home
 LAMBDAFVEC=sum(IOTAF.*SFM);
-DVEC=sum((1-IOTAH).*SHM);   % domestic sales of domestic firms
 
 % Auxiliary variables for moments
 KHH = sum(checkmatH.*(1-IOTAH));    % Number of home firms active in home for each sector
-KHF = sum(checkmatF.*IOTAF);        % Number of home firms active in foreign for each sector
-KFH = sum(checkmatH.*IOTAH);        % Number of foreign firms active in home for each sector
-KFF = sum(checkmatF.*(1-IOTAF));    % Number of foreign firms active in foreign for each sector
-DSHM = SHM.*checkmatH.*(1-IOTAH);   % Share on the home market relative to other domestic firms (equation 17)
-% DSHM1 = DSHM(JJ);
-DSHM1 = sort_back(DSHM,permH);
-DSHM1 = DSHM1./repmat(sum(DSHM1),size(DSHM1,1),1);
+DSHM = SHM.*checkmatH.*(1-IOTAH);    % Share on the home market relative to other domestic firms (equation 17)
 DSHM = sort(DSHM,'descend');
 DSHM = DSHM./repmat(sum(DSHM),size(DSHM,1),1); % Divide to make the share relative    
 TOP1 = DSHM(1,:);
@@ -175,5 +165,5 @@ if AddMom == 1
     end
 end
 
-varphi_bar = [KHH;KHF;KFH;KFF];
+
 end

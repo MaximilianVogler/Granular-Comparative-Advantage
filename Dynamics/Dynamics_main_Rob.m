@@ -18,14 +18,26 @@ load('GE_Results')
 muT=bestParams(1);
 sigmaT=bestParams(2);
 tau=bestParams(3);
-kappa=bestParams(4);
-f=bestParams(5);
+theta=bestParams(4);
+F=bestParams(5);
 
-sigma=5;
-theta=kappa*(sigma-1);
-f=f*4.93*.43e-5;
-F=f/sigma;
+sigma = 5;
+% muT = 0.1345;
+% sigmaT = 1.4128;
+% tau = 1.3444;
+% kappa =
+% theta = 4.3136;
+% sigma = 5;
+% 
+% Y = 126.7572;
+% YF = 194.4945;
+% LF = 173.4218;
+% sigma=5;
+% theta=kappa*(sigma-1);
+% f=f*4.93*.43e-5;
+% F=f/sigma;
 
+% F = 1.0202e-5;
 % New parameters for dynamic model
 nu = 0.045;
 mu = -theta*nu^2/2;
@@ -57,7 +69,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 1/4;
+scale = 1;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -132,6 +144,11 @@ min_FS=min(ZFS);
 min_HL=min(ZHL);
 min_FL=min(ZFL);
 
+[K,KF,PHI,PHIF,LAMBDA,LAMBDAF,MU,MUF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC,PHIFVEC,mom,varphi_bar,X,D,DSHM_small,DSHM_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
+disp('Loop 0 is finished')
+% save('Data/GE_Results','bestParams','Y','YF','LF','varphi_BB')
+[Momarray]=Moments(KHH,TOP1,TOP3,LAMBDAHVEC,LAMBDAFVEC,XS,YXS,ALPHA,Y,YF); 
+
 for t=1:T
 %     uz_HS = repmat(randn(1,S),ZHS_length,1);
 %     uz_HL = repmat(randn(1,S),ZHL_length,1);
@@ -147,12 +164,12 @@ for t=1:T
 %     eps_HL = su*uz_HL+sv*vz_HL;
 %     eps_FS = su*uz_FS+sv*vz_FS;
 %     eps_FL = su*uz_FL+sv*vz_FL;
-
-    ZHS = exp( repmat(log(min_HS),MH_small,1) + abs( log(ZHS) - repmat(log(min_HS),MH_small,1) + mu + nu*randn(MH_small,Nsmall) ));
-    ZFS = exp( repmat(log(min_FS),MF_small,1) + abs( log(ZFS) - repmat(log(min_FS),MF_small,1) + mu + nu*randn(MF_small,Nsmall) ));
+    rng(t);
+    ZHS = exp( repmat(log(min_HS),MH_small,1) + abs( log(ZHS) - repmat(log(min_HS),MH_small,1) + mu + nu*randn(Nsmall,MH_small)' ));
+    ZFS = exp( repmat(log(min_FS),MF_small,1) + abs( log(ZFS) - repmat(log(min_FS),MF_small,1) + mu + nu*randn(Nsmall,MF_small)' ));
     
-    ZHL = exp( repmat(log(min_HL),MH_large,1) + abs( log(ZHL) - repmat(log(min_HL),MH_large,1) + mu + nu*randn(MH_large,Nlarge) ));
-    ZFL = exp( repmat(log(min_FL),MF_large,1) + abs( log(ZFL) - repmat(log(min_FL),MF_large,1) + mu + nu*randn(MF_large,Nlarge) ));
+    ZHL = exp( repmat(log(min_HL),MH_large,1) + abs( log(ZHL) - repmat(log(min_HL),MH_large,1) + mu + nu*randn(Nlarge,MH_large)' ));
+    ZFL = exp( repmat(log(min_FL),MF_large,1) + abs( log(ZFL) - repmat(log(min_FL),MF_large,1) + mu + nu*randn(Nlarge,MF_large)' ));
     
     
     
@@ -171,11 +188,10 @@ for t=1:T
     % If the year is part of RECORD, record PE results
     if any(RECORD==t)
         counter = counter+1;
-        [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,~,~,DSHM_small,DSHM_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
-        LAMBDAFVEC_t(counter,:) = LAMBDAFVEC;
+        [K,KF,PHI,PHIF,LAMBDA,LAMBDAF,MU,MUF,KHH,TOP1,TOP3,XS,YXS,LAMBDAHVEC,LAMBDAFVEC,PHIFVEC,mom,varphi_bar,X,D,DSHM_small,DSHM_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);        LAMBDAFVEC_t(counter,:) = LAMBDAFVEC;
         PHIFVEC_t(counter,:) = PHIFVEC;
-        save_share_small{t} = DSHM_small;
-        save_share_large{t} = DSHM_large;
+        save_share{t} = DSHM_small';
+        save_share_big{t} = DSHM_large';
         disp(['Loop ',num2str(t),' is finished']);
     end
     
@@ -286,51 +302,108 @@ end
 % saveas(gcf,'Results/mean_reversion_50.png')
 
 
-%% Computing SR and LR persistence (Table 4)
+% %% Computing SR and LR persistence (Table 4)
+% 
+% keepstd = zeros(S,T-1)*NaN;
+% keepcorr = zeros(S,1)*NaN;
+% % First the small sectors
+% for z=1:Nsmall
+%     
+%     % Standard deviations across firms within time-sector
+%     for tt=1:T-1
+%         a2 = save_share_small{tt+1}(:,z);
+%         a1 = save_share_small{tt}(:,z);
+%         idx = (a2>0).*(a1>0);               % Only if firm exists in both periods
+%         keepstd(z,tt) = std(a2(idx>0)-a1(idx>0));
+%     end
+%     
+%     % Correlation over firms
+%     a0 = save_share_small{1}(:,z);
+%     aT = save_share_small{T}(:,z);
+%     idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+%     if sum(idx)>1
+%         keepcorr(z) = corr(aT(idx>0),a0(idx>0));
+%     end
+% end
+% 
+% % Now do the same for large sectors
+% 
+% for z=1:Nlarge
+%     
+%     for tt=1:T-1
+%         a2 = save_share_large{tt+1}(:,z);
+%         a1 = save_share_large{tt}(:,z);
+%         idx = (a2>0).*(a1>0);
+%         keepstd(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0));
+%     end
+%     
+%     a0 = save_share_large{1}(:,z);
+%     aT = save_share_large{T}(:,z);
+%     idx = (a0>0).*(aT>0);
+%     if sum(idx)>1
+%         keepcorr(Nsmall+z) = corr(aT(idx>0),a0(idx>0));
+%     end
+%          
+% end
+% 
+% LR_persistence = nanmedian(keepcorr);
+% SR_persistence = nanmedian(nanmedian(keepstd,2));
+% 
+% DynMom = [SR_persistence,LR_persistence];
 
-keepstd = zeros(S,T-1)*NaN;
-keepcorr = zeros(S,1)*NaN;
-% First the small sectors
-for z=1:Nsmall
+Nloop=T;
+
+for i=1:Nsmall
     
-    % Standard deviations across firms within time-sector
-    for tt=1:T-1
-        a2 = save_share_small{tt+1}(:,z);
-        a1 = save_share_small{tt}(:,z);
-        idx = (a2>0).*(a1>0);               % Only if firm exists in both periods
-        keepstd(z,tt) = std(a2(idx>0)-a1(idx>0));
+    
+    for tt=1:Nloop-1
+        a2=save_share{tt+1}(i,:);
+        a1=save_share{tt}(i,:);
+        idx=(a2>0).*(a1>0);
+        keepstd(i,tt)=std(a2(idx>0)-a1(idx>0));
     end
     
-    % Correlation over firms
-    a0 = save_share_small{1}(:,z);
-    aT = save_share_small{T}(:,z);
-    idx = (a0>0).*(aT>0);                   % Again, only if firm exists in both periods
+    %
+    a0=save_share{1}(i,:);
+    
+    a8=save_share{Nloop}(i,:);
+    idx=(a8>0).*(a0>0);
     if sum(idx)>1
-        keepcorr(z) = corr(aT(idx>0),a0(idx>0));
+        keepcorr(i)=corr(a8(idx>0)',a0(idx>0)');
     end
 end
 
-% Now do the same for large sectors
-
-for z=1:Nlarge
+for i=1:S-Nsmall
     
-    for tt=1:T-1
-        a2 = save_share_large{tt+1}(:,z);
-        a1 = save_share_large{tt}(:,z);
-        idx = (a2>0).*(a1>0);
-        keepstd(Nsmall+z,tt) = std(a2(idx>0)-a1(idx>0));
+    
+    for tt=1:Nloop-1
+        a2=save_share_big{tt+1}(i,:);
+        a1=save_share_big{tt}(i,:);
+        idx=(a2>0).*(a1>0);
+        keepstd(Nsmall+i,tt)=std(a2(idx>0)-a1(idx>0));
+        % standard deviation of delta rate of market share between two
+        % years, by sector
     end
+    %
+    a0=save_share_big{1}(i,:);
     
-    a0 = save_share_large{1}(:,z);
-    aT = save_share_large{T}(:,z);
-    idx = (a0>0).*(aT>0);
+    a8=save_share_big{Nloop}(i,:);
+    idx=(a8>0).*(a0>0);
     if sum(idx)>1
-        keepcorr(Nsmall+z) = corr(aT(idx>0),a0(idx>0));
+        keepcorr(Nsmall+i)=corr(a8(idx>0)',a0(idx>0)');
     end
-         
 end
 
-LR_persistence = nanmedian(keepcorr);
-SR_persistence = nanmedian(nanmedian(keepstd,2));
 
-DynMom = [SR_persistence,LR_persistence];
+
+
+
+%% Compare with data moments
+
+%%% Note = measure  MEDIAN across sectors measures
+%%% play with nu until match the following:
+
+
+longrun=median(keepcorr);
+%%% French data/ stata goal 0.8678
+shortrun=nanmedian(nanmedian(keepstd,2));
