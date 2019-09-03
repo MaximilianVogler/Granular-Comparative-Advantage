@@ -27,9 +27,9 @@ sigma=5;
 % F=f/sigma;
 
 % New parameters for dynamic model
-nu = 0.05225;
+nu = 0.0542;
 mu = -theta*nu^2/2;
-rho = 0;
+rho = 0.2;
 
 Y0=123;
 YF0=2*Y0;
@@ -58,7 +58,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 21;
+scale = 1;
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -292,17 +292,15 @@ VB_FL = repmat(varphi_bar_F(1,~small),ZFL_length,1);
 rng(aseed);
 
 % Years that are actually being recorded
-RECORD = [1:12];
+RECORD = [1:11];
 R_length = length(RECORD);
 T = RECORD(end);
 
-LAMBDAFVEC_t = zeros(R_length+1,S);
-LAMBDAFVEC_t(1,:) = LAMBDAFVEC_0;
-
+LAMBDAFVEC_t = zeros(R_length,S);
+DVEC_t = zeros(R_length,S);
 XVEC_t = zeros(R_length,S);
+PHIFVEC_t = zeros(R_length,S);
 
-PHIFVEC_t = zeros(R_length+1,S);
-PHIFVEC_t(1,:) = PHIFVEC_0;
 
 % Determine productivity draws
 su = sqrt(rho*nu^2);
@@ -311,6 +309,7 @@ sv = sqrt(nu^2*(1-rho));
 counter = 1;
 
 for t=1:T
+
     uz_HS = repmat(randn(1,S),ZHS_length,1);
     uz_HL = repmat(randn(1,S),ZHL_length,1);
     uz_FS = repmat(randn(1,S),ZFS_length,1);
@@ -325,26 +324,27 @@ for t=1:T
     eps_HL = su*uz_HL+sv*vz_HL;
     eps_FS = su*uz_FS+sv*vz_FS;
     eps_FL = su*uz_FL+sv*vz_FL;
-
+    
+    ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+eps_HS(~inactive_HS)));
+%     ZHS_Save =[ZHS_Save,ZHS(:)];
+    ZHL(~inactive_HL) = exp(VB_HL(~inactive_HL)+abs(log(ZHL(~inactive_HL))-VB_HL(~inactive_HL)+mu+eps_HL(~inactive_HL)));
+    ZFS(~inactive_FS) = exp(VB_FS(~inactive_FS)+abs(log(ZFS(~inactive_FS))-VB_FS(~inactive_FS)+mu+eps_FS(~inactive_FS)));
+    ZFL(~inactive_FL) = exp(VB_FL(~inactive_FL)+abs(log(ZFL(~inactive_FL))-VB_FL(~inactive_FL)+mu+eps_FL(~inactive_FL)));
+   
 %     ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+nu*randn(length(ZHS(~inactive_HS)),1)));
 % %     ZHS_Save =[ZHS_Save,ZHS(:)];
 %     ZHL(~inactive_HL) = exp(VB_HL(~inactive_HL)+abs(log(ZHL(~inactive_HL))-VB_HL(~inactive_HL)+mu+nu*randn(length(ZHL(~inactive_HL)),1)));
 %     ZFS(~inactive_FS) = exp(VB_FS(~inactive_FS)+abs(log(ZFS(~inactive_FS))-VB_FS(~inactive_FS)+mu+nu*randn(length(ZFS(~inactive_FS)),1)));
 %     ZFL(~inactive_FL) = exp(VB_FL(~inactive_FL)+abs(log(ZFL(~inactive_FL))-VB_FL(~inactive_FL)+mu+nu*randn(length(ZFL(~inactive_FL)),1)));
 %     
-    ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+eps_HS(~inactive_HS)));
-%     ZHS_Save =[ZHS_Save,ZHS(:)];
-    ZHL(~inactive_HL) = exp(VB_HL(~inactive_HL)+abs(log(ZHL(~inactive_HL))-VB_HL(~inactive_HL)+mu+eps_HL(~inactive_HL)));
-    ZFS(~inactive_FS) = exp(VB_FS(~inactive_FS)+abs(log(ZFS(~inactive_FS))-VB_FS(~inactive_FS)+mu+eps_FS(~inactive_FS)));
-    ZFL(~inactive_FL) = exp(VB_FL(~inactive_FL)+abs(log(ZFL(~inactive_FL))-VB_FL(~inactive_FL)+mu+eps_FL(~inactive_FL)));
-    
+ 
     % If the year is part of RECORD, record PE results
     if any(RECORD==t)
-        counter = counter+1;
-        [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,XVEC,~,DSHM_small,DSHM_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
-        LAMBDAFVEC_t(counter,:) = LAMBDAFVEC;
-        PHIFVEC_t(counter,:) = PHIFVEC;
-        XVEC_t(counter-1,:) = XVEC; 
+        [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC,PHIFVEC,~,~,XVEC,DVEC,DSHM_small,DSHM_large,DSHMS_small,DSHMS_large]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
+        LAMBDAFVEC_t(t,:) = LAMBDAFVEC;
+        PHIFVEC_t(t,:) = PHIFVEC;
+        XVEC_t(t,:) = XVEC; 
+        DVEC_t(t,:) = DVEC;
         save_share_small{t} = DSHM_small;
         save_share_large{t} = DSHM_large;
         disp(['Loop ',num2str(t),' is finished']);
@@ -475,29 +475,22 @@ keepcorr_13 = zeros(S,1)*NaN;
 keepcorr_14 = zeros(S,1)*NaN;
 keepcorr_15 = zeros(S,1)*NaN;
 
-avg_ms_int = zeros(S,1);
-avg_ms_50_int = zeros(S,1);
-avg_ms_80_int = zeros(S,1);
-for z=1:Nsmall
-    idx_50_small = save_share_small{1}(:,z)>=quantile(save_share_small{1}(save_share_small{1}(:,z)>0,z),0.5);
-    idx_80_small = save_share_small{1}(:,z)>=quantile(save_share_small{1}(save_share_small{1}(:,z)>0,z),0.8);
-    avg_ms_int(z) = mean(save_share_small{1}(save_share_small{1}(:,z)>0,z));
-    avg_ms_50_int(z) = mean(save_share_small{1}(idx_50_small,z));
-    avg_ms_80_int(z) = mean(save_share_small{1}(idx_80_small,z));
-end
-for z=1:Nlarge
-    idx_50_large = save_share_large{1}(:,z)>=quantile(save_share_large{1}(save_share_large{1}(:,z)>0,z),0.5);
-    idx_80_large = save_share_large{1}(:,z)>=quantile(save_share_large{1}(save_share_large{1}(:,z)>0,z),0.8);
-    avg_ms_int(Nsmall+z) = mean(save_share_large{1}(save_share_large{1}(:,z)>0,z));
-    avg_ms_50_int(Nsmall+z) = mean(save_share_large{1}(idx_50_large,z));
-    avg_ms_80_int(Nsmall+z) = mean(save_share_large{1}(idx_80_large,z));
-end
-avg_ms = nanmean(avg_ms_int);
-avg_ms_50 = nanmean(avg_ms_50_int);
-avg_ms_80 = nanmean(avg_ms_80_int);
+% avg_ms = zeros(S,1);
+% avg_ms_50 = zeros(S,1);
+% avg_ms_80 = zeros(S,1);
+
+% avg_ms = nanmean(avg_ms_int);
+% avg_ms_50 = nanmean(avg_ms_50_int);
+% avg_ms_80 = nanmean(avg_ms_80_int);
     
 % First the small sectors
 for z=1:Nsmall
+    
+    idx_50_small = save_share_small{1}(:,z)>=quantile(save_share_small{1}(save_share_small{1}(:,z)>0,z),0.5);
+    idx_80_small = save_share_small{1}(:,z)>=quantile(save_share_small{1}(save_share_small{1}(:,z)>0,z),0.8);
+    avg_ms = mean(save_share_small{1}(save_share_small{1}(:,z)>0,z));
+    avg_ms_50 = mean(save_share_small{1}(idx_50_small,z));
+    avg_ms_80 = mean(save_share_small{1}(idx_80_small,z));
     
     % Standard deviation across firms within time-sector (Moment 1)
     for tt=1:T-1
@@ -623,6 +616,12 @@ end
 % Now do the same for large sectors
 
 for z=1:Nlarge
+    
+    idx_50_large = save_share_large{1}(:,z)>=quantile(save_share_large{1}(save_share_large{1}(:,z)>0,z),0.5);
+    idx_80_large = save_share_large{1}(:,z)>=quantile(save_share_large{1}(save_share_large{1}(:,z)>0,z),0.8);
+    avg_ms = mean(save_share_large{1}(save_share_large{1}(:,z)>0,z));
+    avg_ms_50 = mean(save_share_large{1}(idx_50_large,z));
+    avg_ms_80 = mean(save_share_large{1}(idx_80_large,z));
     
     % Moment 1
     for tt=1:T-1
@@ -843,11 +842,11 @@ DATA = [ID(:),YEAR,X_t(:),X_t1(:)];
 fname = sprintf('Results/Data/sectoral_regdata_%d',S);
 fname2 = sprintf('Results/Data/sectoral_regdata_%d.csv',S);
 save(fname,'DATA');
-title = {'ID','Year','X_t','X_t1'};
-TT = cell2table(num2cell(DATA),'VariableNames',title);
+title1 = {'ID','Year','X_t','X_t1'};
+TT = cell2table(num2cell(DATA),'VariableNames',title1);
 writetable(TT,fname2);
 
-%% 2nd class of moments
+% Sectoral Standard Deviation
 
 X_t = XVEC_t(2:end,:);
 X_t1 = XVEC_t(1:end-1,:);
@@ -859,10 +858,107 @@ for t=1:R_length-1
 end
 smom5 = nanmedian(sectoral_sd);
 
-%% 3rd class of moments
+% Sectoral Correlation
 
 ind = (XVEC_t(1,:)>0)&(XVEC_t(end,:)>0);
 smom6 = corr(log(XVEC_t(1,ind))',log(XVEC_t(end,ind))');
 DynMom2 = [smom1,smom2,smom3,smom4,smom5,smom6];
+% DynMom2 = [smom5,smom6];
 DynMom2_sd = [sd1,sd2,sd3,sd4];
 DynMom2_t = [smom1/sd1,smom2/sd2,smom3/sd3,smom4/sd4];
+
+%% 3rd Class of Moments
+
+K=20;
+DynMom3_beta = zeros(K,1);
+DynMom3_20_beta = zeros(K,1);
+TOP = zeros(K,S);
+TOP20_share_small = zeros(1,Nsmall);
+TOP20_share_large = zeros(1,Nlarge);
+TOP20_share = zeros(1,S);
+Conf_lower = zeros(K,1);
+Conf_upper = zeros(K,1);
+Conf_lower_20 = zeros(K,1);
+Conf_upper_20 = zeros(K,1);
+R2 = zeros(K,1);
+R2_20 = zeros(K,1);
+
+X = XVEC_t(end,:);
+D = DVEC_t(end,:);
+ind = (X>0)&(D>0);
+
+for z = 1:Nsmall
+    ind_20_small = DSHMS_small(:,z)>=quantile(DSHMS_small(DSHMS_small(:,z)>0,z),0.8);
+    TOP20_share_small(z) = sum(DSHMS_small(ind_20_small,z),1);
+end
+
+for z = 1:Nlarge
+    ind_20_large = DSHMS_large(:,z)>=quantile(DSHMS_large(DSHMS_large(:,z)>0,z),0.8);
+    TOP20_share_large(z) = sum(DSHMS_large(ind_20_large,z),1);
+end
+
+TOP20_share(small) = TOP20_share_small;
+TOP20_share(~small) = TOP20_share_large;
+
+for k = 1:K
+
+    TOP(k,small) = sum(DSHMS_small(1:k,:),1);
+    TOP(k,~small) = sum(DSHMS_large(1:k,:),1);
+
+    stats = regstats(log(X(ind))',[TOP(k,ind)',log(D(ind))'],'linear',{'beta','covb','rsquare'});
+    DynMom3_beta(k) = stats.beta(2);
+    se = diag(sqrt(stats.covb));
+    se = se(2);
+    Conf_lower(k) = stats.beta(2)-1.980272249272974619185*se;
+    Conf_upper(k) = stats.beta(2)+1.980272249272974619185*se;
+    R2(k) = stats.rsquare;
+    
+    stats = regstats(log(X(ind))',[TOP(k,ind)',log(D(ind))',TOP20_share(ind)'],'linear',{'beta','covb','rsquare'});
+    DynMom3_20_beta(k) = stats.beta(2); 
+    se = diag(sqrt(stats.covb));
+    se = se(2);
+    Conf_lower_20(k) = stats.beta(2)-1.980272249272974619185*se;
+    Conf_upper_20(k) = stats.beta(2)+1.980272249272974619185*se;
+    R2_20(k) = stats.rsquare; 
+end
+
+% Generate data for Stata
+DDATA = [X',D',TOP(1,:)',TOP(3,:)',TOP20_share'];
+fname = sprintf('Results/Data/CS_regdata_%d',S);
+fname2 = sprintf('Results/Data/CS_regdata_%d.csv',S);
+save(fname,'DATA');
+title1 = {'X','D','TOP1','TOP3','T20share'};
+TTT = cell2table(num2cell(DDATA),'VariableNames',title1);
+writetable(TTT,fname2);
+
+% Plot Coefficients and R2
+
+figure(8)
+x=[1:K];
+hold on
+plot(x,DynMom3_beta','-or','LineWidth',3.0)
+plot(x,DynMom3_20_beta,'-og','LineWidth',3.0)
+plot(x,Conf_lower,'r')
+plot(x,Conf_upper,'r')
+plot(x,Conf_lower_20,'g')
+plot(x,Conf_upper_20,'g')
+legend('Only log(D) as control','Also Top20 share as control');
+name = sprintf('Regression of log-exports on top-k firm market share, $rho = %d$',rho);
+title(name,'interpreter','latex');
+xlabel('k');
+ylabel('Regression Coefficient');
+name = sprintf('Results/coefficients_rho%d.png',rho);
+saveas(gcf,name)
+
+figure(9)
+hold on 
+plot(x,R2','-or','LineWidth',3.0)
+plot(x,R2_20,'-og','LineWidth',3.0)
+legend('Only log(D) as control','Also Top20 share as control');
+name = sprintf('R2 of Regression of log-exports on top-k firm market share, $rho = %d$',rho);
+title(name,'interpreter','latex');
+xlabel('k');
+ylabel('R2');
+name = sprintf('Results/R2_rho%d.png',rho);
+saveas(gcf,name)
+
