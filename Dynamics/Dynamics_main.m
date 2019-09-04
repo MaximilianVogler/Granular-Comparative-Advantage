@@ -27,9 +27,9 @@ sigma=5;
 % F=f/sigma;
 
 % New parameters for dynamic model
-nu = 0.0542;
+nu = 0.06; % 0.0542;
 mu = -theta*nu^2/2;
-rho = 0.2;
+rho = 0.1;% 0.2;
 
 Y0=123;
 YF0=2*Y0;
@@ -58,7 +58,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 1;
+scale = 3/4; %1 %3/4 %21
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
