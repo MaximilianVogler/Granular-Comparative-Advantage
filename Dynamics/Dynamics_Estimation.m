@@ -46,7 +46,7 @@ vMU = 1;
 BER = 1;
 
 % Scale of model (i.e. number of sectors)
-scale = 21; %1 %3/4 %21
+scale = 3/4; %1 %3/4 %21
 
 % Compute number of sectors 
 cdshares_init = csvread('cdshares_v3.csv');             % Cobb-Douglas shares from external data source.
@@ -241,6 +241,11 @@ num_param = row*col;
 
 DATA = zeros(32,num_param);
 
+ZHS_start = ZHS;
+ZHL_start = ZHL;
+ZFS_start = ZFS;
+ZFL_start = ZFL;
+
 % Iterate over this parameter grid
 for itparam = 1:num_param
     
@@ -255,14 +260,25 @@ for itparam = 1:num_param
     XVEC_t = zeros(R_length,S);
     PHIFVEC_t = zeros(R_length,S);
 
-    % Determine productivity draws
     su = sqrt(rho*nu^2);
     sv = sqrt(nu^2*(1-rho));
+    
+    % Re-initialize matrices, so every iteration starts at the same
+    % productivity
+    
+    ZHS = ZHS_start;
+    ZHL = ZHL_start;
+    ZFS = ZFS_start;
+    ZFL = ZFL_start;
+    
+    aseed = 1;
+    rng(aseed);
 
     counter = 1;
     
     for t=1:T
 
+        % Determine productivity draws
         uz_HS = repmat(randn(1,S),ZHS_length,1);
         uz_HL = repmat(randn(1,S),ZHL_length,1);
         uz_FS = repmat(randn(1,S),ZFS_length,1);
@@ -365,7 +381,8 @@ for itparam = 1:num_param
     for z=1:Nsmall
         clearvars small_shares1
         % Indicator for being active in all periods
-        idx_z_active = true(length(DSHM_small),1);
+        dim = size(DSHM_small);
+        idx_z_active = true(dim(1),1);
         for t=1:T
            idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
         end
@@ -386,7 +403,8 @@ for itparam = 1:num_param
     large_shares = zeros(T,0);
     for z=1:Nlarge
         clearvars large_shares1
-        idx_z_active = true(length(DSHM_large),1);
+        dim = size(DSHM_large);
+        idx_z_active = true(dim(1),1);
         for t=1:T
            idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
         end
@@ -483,7 +501,8 @@ for itparam = 1:num_param
     for z=1:Nsmall
         clearvars small_shares1 small_shares2
         % Indicator for being active in all periods
-        idx_z_active = true(length(DSHM_small),1);
+        dim = size(DSHM_small);
+        idx_z_active = true(dim(1),1);
         for t=1:T
            idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
         end
@@ -515,7 +534,8 @@ for itparam = 1:num_param
     large_shares_indep_f = zeros(T-1,0);
     for z=1:Nlarge
         clearvars large_shares1 large_shares2
-        idx_z_active = true(length(DSHM_large),1);
+        dim = size(DSHM_large);
+        idx_z_active = true(dim(1),1);
         for t=1:T
            idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
         end
@@ -568,7 +588,7 @@ for itparam = 1:num_param
             Indep1 = log(XVEC_t(t,:));
             Indep2 = XVEC_t(t,:)./DVEC_t(t,:);
             Control1 = log(DVEC_t(t,:));
-            ind = (XVEC_t(t+k,:)>0) & (XVEC_t(t+k,:)>0);
+            ind = (XVEC_t(t+k,:)>0) & (XVEC_t(t,:)>0);
             ind2 = (XVEC_t(t+k,:)>0) & (DVEC_t(t+k,:)>0) & (XVEC_t(t,:)>0) & (DVEC_t(t,:)>0);
             Dep1 = Dep1(ind);
             Dep2 = Dep2(ind2);
@@ -582,16 +602,22 @@ for itparam = 1:num_param
             Control = [Control,Control1];
         end
         % Regression w/o controls
-        stats = regstats(Dep',Indep','linear',{'beta','covb'});
-        mom(counter,1) = stats.beta(2);
+%         stats = regstats(Dep',Indep','linear',{'beta','covb'});
+%         mom(counter,1) = stats.beta(2);
+        mom(counter,1) = Indep*Indep'\(Indep*Dep');
         
         % Regression w/ controls
-        stats = regstats(Dep',[Indep', Control'],'linear',{'beta','covb'});
-        mom(counter,2) = stats.beta(2);
+        IndCont = [Indep', Control'];
+        
+        IntRes = IndCont'*IndCont\(IndCont'*Dep');
+        mom(counter,2) = IntRes(1);
+%         stats = regstats(Dep',[Indep', Control'],'linear',{'beta','covb'});
+%         mom(counter,2) = stats.beta(2);
         
         % Regression for moments 21 & 22
-        stats = regstats(Dep_f',Indep_f','linear',{'beta','covb'});
-        mom(counter,3) = stats.beta(2);
+        mom(counter,3) = Indep_f*Indep_f'\(Indep_f*Dep_f');
+%         stats = regstats(Dep_f',Indep_f','linear',{'beta','covb'});
+%         mom(counter,3) = stats.beta(2);
         
     end
     DATA(17,itparam) = mom(1,1);
@@ -615,7 +641,8 @@ for itparam = 1:num_param
         for z=1:Nsmall
             clearvars small_shares1_dep small_shares2_dep small_shares1_indep small_shares2_indep
             % Indicator for being active in all periods
-            idx_z_active = true(length(DSHM_small),1);
+            dim = size(DSHM_small);
+            idx_z_active = true(dim(1),1);
             for t=1:T
                idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
             end
@@ -647,7 +674,8 @@ for itparam = 1:num_param
         large_shares_indep_f = zeros(T-k,0);
         for z=1:Nlarge
             clearvars large_shares1_dep large_shares2_dep large_shares1_indep large_shares2_indep 
-            idx_z_active = true(length(DSHM_large),1);
+            dim = size(DSHM_large);
+            idx_z_active = true(dim(1),1);
             for t=1:T
                idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
             end
@@ -675,11 +703,13 @@ for itparam = 1:num_param
         Indep_f = [small_shares_indep_f,large_shares_indep_f];
 
         % Regression
-        stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
-        mom(counter,1) = stats.beta(2);
+%         stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
+        mom(counter,1) = Indep(:)'*Indep(:)\(Indep(:)'*Dep(:));
+%         mom(counter,1) = stats.beta(2);
 
-        stats = regstats(Dep_f(:),Indep_f(:),'linear',{'beta','covb'});
-        mom(counter,2) = stats.beta(2);
+        mom(counter,2) = Indep_f(:)'*Indep_f(:)\(Indep_f(:)'*Dep_f(:));
+%         stats = regstats(Dep_f(:),Indep_f(:),'linear',{'beta','covb'});
+%         mom(counter,2) = stats.beta(2);
     end
     
     DATA(23,itparam) = mom(1,1);
@@ -708,7 +738,8 @@ for itparam = 1:num_param
     for z=1:Nsmall
         clearvars small_shares1 small_shares2
         % Indicator for being active in all periods
-        idx_z_active = true(length(DSHM_small),1);
+        dim = size(DSHM_small);
+        idx_z_active = true(dim(1),1);
         for t=1:T
            idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
         end
@@ -732,7 +763,8 @@ for itparam = 1:num_param
     large_shares_f = zeros(T-1,0);
     for z=1:Nlarge
         clearvars large_shares1 large_shares2
-        idx_z_active = true(length(DSHM_large),1);
+        dim = size(DSHM_large);
+        idx_z_active = true(dim(1),1);
         for t=1:T
            idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
         end
