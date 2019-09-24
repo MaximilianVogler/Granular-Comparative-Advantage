@@ -232,34 +232,40 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_v_vec = 0.8;
-alpha_u_vec = 0.05;
-[alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
-[row,col] = size(alpha_v_mat);
-num_param = row*col;
+% rho_vec = 0.95:0.005:0.99;
+% nu_vec = 0.1:0.05:0.25;
+% [rho_mat,nu_mat] = meshgrid(rho_vec,nu_vec); 
+% [row,col] = size(rho_mat);
+% num_param = row*col;
 
-DATA = zeros(32+T,num_param);
+rho_vec = 0.5:0.05:0.55;
+num_param = length(rho_vec);
+
+DATA = zeros(32,num_param);
 
 ZHS_start = ZHS;
 ZHL_start = ZHL;
 ZFS_start = ZFS;
 ZFL_start = ZFL;
 
-Pareto = zeros(T,num_param);
-
 % Iterate over this parameter grid
 for itparam = 1:num_param
     
     % Set the correct parameters for this iteration
-    alpha_v = alpha_v_mat(itparam);
-    alpha_u = alpha_u_mat(itparam);
-    mu = -theta*alpha_u^2/2;
+%     rho = rho_mat(itparam);
+    rho = rho_vec(itparam);
+%     nu = nu_mat(itparam);
+    nu = 0.05/(1-rho);
+    mu = -theta*nu^2/2;
     
     % Initialize matrices of interest
     LAMBDAFVEC_t = zeros(R_length,S);
     DVEC_t = zeros(R_length,S);
     XVEC_t = zeros(R_length,S);
     PHIFVEC_t = zeros(R_length,S);
+
+    su = sqrt(rho*nu^2);
+    sv = sqrt(nu^2*(1-rho));
     
     % Re-initialize matrices, so every iteration starts at the same
     % productivity
@@ -277,20 +283,20 @@ for itparam = 1:num_param
     for t=1:T
 
         % Determine productivity draws
-        vz_HS = repmat(randn(1,S),ZHS_length,1);
-        vz_HL = repmat(randn(1,S),ZHL_length,1);
-        vz_FS = repmat(randn(1,S),ZFS_length,1);
-        vz_FL = repmat(randn(1,S),ZFL_length,1);
+        uz_HS = repmat(randn(1,S),ZHS_length,1);
+        uz_HL = repmat(randn(1,S),ZHL_length,1);
+        uz_FS = repmat(randn(1,S),ZFS_length,1);
+        uz_FL = repmat(randn(1,S),ZFL_length,1);
 
-        uz_HS = randn(ZHS_length,S);
-        uz_HL = randn(ZHL_length,S);
-        uz_FS = randn(ZFS_length,S);
-        uz_FL = randn(ZFL_length,S);
+        vz_HS = randn(ZHS_length,S);
+        vz_HL = randn(ZHL_length,S);
+        vz_FS = randn(ZFS_length,S);
+        vz_FL = randn(ZFL_length,S);
 
-        eps_HS = alpha_u*uz_HS+alpha_v*vz_HS;
-        eps_HL = alpha_u*uz_HL+alpha_v*vz_HL;
-        eps_FS = alpha_u*uz_FS+alpha_v*vz_FS;
-        eps_FL = alpha_u*uz_FL+alpha_v*vz_FL;
+        eps_HS = su*uz_HS+sv*vz_HS;
+        eps_HL = su*uz_HL+sv*vz_HL;
+        eps_FS = su*uz_FS+sv*vz_FS;
+        eps_FL = su*uz_FL+sv*vz_FL;
 
         % Evolution of productivity draws
         ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+eps_HS(~inactive_HS)));
@@ -307,8 +313,6 @@ for itparam = 1:num_param
             DVEC_t(t,:) = DVEC;
             save_share_small{t} = DSHM_small;
             save_share_large{t} = DSHM_large;
-            save_share_small_S{t} = DSHMS_small;
-            save_share_large_S{t} = DSHMS_large;
             disp(['Loop ',num2str(t),' is finished']);
         end
     
@@ -767,35 +771,11 @@ for itparam = 1:num_param
     DATA(30,itparam) = std(Delta_f(:));
     
     DATA(3:32,itparam) = DATA(1:30,itparam);
-    DATA(1:2,itparam) = [alpha_v;alpha_u];
+    DATA(1:2,itparam) = [rho;nu];
     
-    % Compute Pareto-Shares
-    
-    for t=1:T
-        [row_s,col_s] = size(save_share_small_S{t});
-        [row_l,col_l] = size(save_share_large_S{t});
-        Rank_small = repmat(log((1:row_s)-1/2)',1,col_s);
-        Rank_large = repmat(log((1:row_l)-1/2)',1,col_l);
-        index_small = save_share_small_S{t}>0; 
-        index_large = save_share_large_S{t}>0;
-        thresh_small = prctile(save_share_small_S{t}(index_small),25);
-        thresh_large = prctile(save_share_large_S{t}(index_large),25);
-        index_small = save_share_small_S{t}>0 & sum(index_small)>10 & save_share_small_S{t} > thresh_small;
-        index_large = save_share_large_S{t}>0 & sum(index_large)>10 & save_share_large_S{t} > thresh_large;
-        Share_small = log(save_share_small_S{t}(index_small));
-        Share_large = log(save_share_large_S{t}(index_large));
-        Rank = [Rank_small(index_small);Rank_large(index_large)];
-        Share = [Share_small;Share_large];
-        stats = regstats(Rank,Share,'linear',{'beta','covb'});
-        Pareto(t,itparam) = stats.beta(2);       
-    end
-    DATA(33:end,itparam) = Pareto(:,itparam);
-    hold on
-    scatter(Rank,Share)
-    plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/30DynMom_alpha%d.csv',S);
+fname = sprintf('Results/Moments/30DynMom_upper_end_%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
