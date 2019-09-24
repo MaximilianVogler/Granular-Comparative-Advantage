@@ -232,7 +232,7 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_v_vec = 0.8;
+alpha_v_vec = 0.9;
 alpha_u_vec = 0.05;
 [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 [row,col] = size(alpha_v_mat);
