@@ -44,6 +44,9 @@ vMU = 1;
 % Competition Structure
 BER = 1;
 
+% Variable Threshold
+var_thresh = 1;
+
 % Scale of model (i.e. number of sectors)
 scale = 3/4; %1 %3/4 %21
 
@@ -232,8 +235,8 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_v_vec = 0.9;
-alpha_u_vec = 0.05;
+alpha_v_vec = 0.19:0.01:0.25;
+alpha_u_vec = 0.001:0.001:0.01;
 [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 [row,col] = size(alpha_v_mat);
 num_param = row*col;
@@ -244,6 +247,11 @@ ZHS_start = ZHS;
 ZHL_start = ZHL;
 ZFS_start = ZFS;
 ZFL_start = ZFL;
+
+VB_HS_start = VB_HS;
+VB_HL_start = VB_HL;
+VB_FS_start = VB_FS;
+VB_FL_start = VB_FL;
 
 Pareto = zeros(T,num_param);
 
@@ -262,12 +270,19 @@ for itparam = 1:num_param
     PHIFVEC_t = zeros(R_length,S);
     
     % Re-initialize matrices, so every iteration starts at the same
-    % productivity
+    % productivity 
     
     ZHS = ZHS_start;
     ZHL = ZHL_start;
     ZFS = ZFS_start;
     ZFL = ZFL_start;
+    
+    if var_thresh == 1
+        VB_HS = VB_HS_start;
+        VB_HL = VB_HL_start;
+        VB_FS = VB_FS_start;
+        VB_FL = VB_FL_start;
+    end
     
     aseed = 1;
     rng(aseed);
@@ -277,20 +292,27 @@ for itparam = 1:num_param
     for t=1:T
 
         % Determine productivity draws
-        vz_HS = repmat(randn(1,S),ZHS_length,1);
-        vz_HL = repmat(randn(1,S),ZHL_length,1);
-        vz_FS = repmat(randn(1,S),ZFS_length,1);
-        vz_FL = repmat(randn(1,S),ZFL_length,1);
+        vz_HS = repmat(randn(1,Nsmall),ZHS_length,1);
+        vz_HL = repmat(randn(1,Nlarge),ZHL_length,1);
+        vz_FS = repmat(randn(1,Nsmall),ZFS_length,1);
+        vz_FL = repmat(randn(1,Nlarge),ZFL_length,1);
 
-        uz_HS = randn(ZHS_length,S);
-        uz_HL = randn(ZHL_length,S);
-        uz_FS = randn(ZFS_length,S);
-        uz_FL = randn(ZFL_length,S);
+        uz_HS = randn(ZHS_length,Nsmall);
+        uz_HL = randn(ZHL_length,Nlarge);
+        uz_FS = randn(ZFS_length,Nsmall);
+        uz_FL = randn(ZFL_length,Nlarge);
 
         eps_HS = alpha_u*uz_HS+alpha_v*vz_HS;
         eps_HL = alpha_u*uz_HL+alpha_v*vz_HL;
         eps_FS = alpha_u*uz_FS+alpha_v*vz_FS;
         eps_FL = alpha_u*uz_FL+alpha_v*vz_FL;
+        
+        if var_thresh == 1
+            VB_HS = VB_HS + alpha_v * vz_HS;
+            VB_HL = VB_HL + alpha_v * vz_HL;
+            VB_FS = VB_FS + alpha_v * vz_FS;
+            VB_FL = VB_FL + alpha_v * vz_FL;
+        end
 
         % Evolution of productivity draws
         ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+eps_HS(~inactive_HS)));
@@ -436,18 +458,14 @@ for itparam = 1:num_param
     
     clearvars Dep Indep ind
     % Demeaning to control for fixed effects
-    del_vec = [];
+
     for z=1:S
         ind = (XVEC_t(2:end,z)>0) & (XVEC_t(1:end-1,z)>0);
         if sum(ind)>0
             Dep(ind,z) = log(XX(ind,z))-mean(log(XX(ind,z)));
             Indep(ind,z) = log(XX1(ind,z))-mean(log(XX1(ind,z)));
-        else
-            del_vec = [del_vec,z];
         end
     end
-    Dep(:,del_vec) = [];
-    Indep(:,del_vec) = [];
 
     % Regression 
     stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
@@ -461,19 +479,14 @@ for itparam = 1:num_param
     
     clearvars Dep Indep ind
     % Demeaning to control for fixed effects
-    del_vec = [];
     for z=1:S
         ind = (XVEC_t(2:end,z)>0)&(DVEC_t(2:end,z)>0)&(XVEC_t(1:end-1,z)>0)&(DVEC_t(1:end-1,z)>0);
         if sum(ind)>0
             Dep(ind,z) = XX(ind,z)-mean(XX(ind,z));
             Indep(ind,z) = XX1(ind,z)-mean(XX1(ind,z));
-        else
-            del_vec = [del_vec,z]; 
         end
     end
-    Dep(:,del_vec) = [];
-    Indep(:,del_vec) = [];
-    
+
     % Regression
     stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
     DATA(11,itparam) = stats.beta(2);
@@ -790,12 +803,12 @@ for itparam = 1:num_param
         Pareto(t,itparam) = stats.beta(2);       
     end
     DATA(33:end,itparam) = Pareto(:,itparam);
-    hold on
-    scatter(Rank,Share)
-    plot(Rank,-theta/4*Rank)
+%     hold on
+%     scatter(Rank,Share)
+%     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/30DynMom_alpha%d.csv',S);
+fname = sprintf('Results/Moments/30DynMom_var_thresh%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
