@@ -6,8 +6,8 @@
 *Import Data
 clear all
 cd "/Users/Maximilian/Documents/Princeton/RA Itskhoki/Itskhoki and Gaubert (2018)/Clean Code/Dynamics/Results/Data"
-* import delimited regdata_357
-import delimited regdata_9996
+* import delimited calibrated_regdata_357
+import delimited calibrated_regdata_9996
 
 * Define auxiliary Variables
 gen log_x = log(x)
@@ -18,7 +18,7 @@ eststo clear
 ** Table 1
 
 * Column 1
-eststo CS_2005: reg log_x top1 log_d if year==2005
+eststo CS_2005: reg log_x top1 log_d if year==8
 
 * Column 3
 eststo Panel: reg log_x top1 log_d i.year , vce(cluster id)
@@ -33,11 +33,11 @@ eststo Dynamics_1: xtreg log_x top1 i.year, fe
 * Column 6
 eststo Dynamics_2: reg d.log_x d.top1
 
-keep if year == 1997 | year == 2008
+keep if year == 1 | year == 11
 sort id year
 gen Delta_log_x = log_x[_n+1]-log_x[_n]
 gen Delta_top_1 = top1[_n+1]-top1[_n]
-keep if year == 1997
+keep if year == 1
 
 * Column 8
 eststo Dynamics_3: reg Delta_log_x Delta_top_1

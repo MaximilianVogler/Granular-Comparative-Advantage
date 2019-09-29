@@ -11,6 +11,7 @@ addpath('Data');
 addpath('Auxiliary Functions');
 
 %% Parameter Vector from Static Model
+% load('Estimate_static');
 load('GE_Results')
 
 muT=bestParams(1);
@@ -43,9 +44,6 @@ vMU = 1;
 
 % Competition Structure
 BER = 1;
-
-% Variable Threshold
-var_thresh = 1;
 
 % Scale of model (i.e. number of sectors)
 scale = 21; %1 %3/4 %21
@@ -101,15 +99,12 @@ ZFL=UFL.^(-1/theta);
 
 %% Solve for lower productivity threshold 
 
-% Solve for GE quantities (can be skipped if computed previously and
-% results imported above)
-% [~,Y,YF,LF,~,~,~,~,~,~,LAMBDAFVEC_0,varphi_BB]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER,0);
-% save('Data/GE_Results','bestParams','Y','YF','LF','varphi_BB')
-
 % % Compute PE given initial productivities
+% [~,Y,YF,LF,~,~,~,~,~,~,LAMBDAFVEC_0,varphi_BB]=GEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,L0,Y0,YF0,small,vMU,BER,0);
+
 [~,~,~,~,~,~,~,~,~,~,~,~,~,~,LAMBDAFVEC_0,PHIFVEC_0,~,varphi_BB,~,~]=PEreplication_vectorized(sigma,theta,F,tau,ALPHA,RTS,RTL,ZHS,ZFS,ZHL,ZFL,w,wF,Y,YF,small,vMU,BER,0,0);
 disp('Loop 0 is finished')
-
+% save('Data/GE_Results','bestParams','Y','YF','LF','varphi_BB')
 
 % Lower bound
 ZS = [ZHS;ZFS];
@@ -151,8 +146,11 @@ end
 [value_HS,index_HS] = min(abs(log(min(varphi(1:2,1:Nsmall)))-log(min(ZHS))));
 [~,zero_index_HS] = min(abs(log(RT(small))));
 gross_intercept = log(min(ZHS(:,zero_index_HS)));
+% net_intercept = gross_intercept + 0.5*(abs(log(min(varphi(1:2,index_HS)))-log(min(ZHS(:,index_HS)))));
 net_intercept_HS = gross_intercept + 0.5*value_HS;
 varphi_bar_HS = (1/theta)*log(RT(small))+net_intercept_HS;
+% AAA = log(min(varphi(1:2,index_HS)))*ones(1,Nsmall);
+% BBB = log(min(ZHS(:,index_HS)))*ones(1,Nsmall);
 
 % Large Sectors Home
 [value_HL,~] = min(abs(log(min(varphi(1:2,Nsmall+1:end)))-log(min(ZHL))));
@@ -235,56 +233,48 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_v_vec = 0.05;
-alpha_u_vec = 0.068;
-[alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
-[row,col] = size(alpha_v_mat);
-num_param = row*col;
+% rho_vec = 0.95:0.005:0.99;
+% nu_vec = 0.1:0.05:0.25;
+% [rho_mat,nu_mat] = meshgrid(rho_vec,nu_vec); 
+% [row,col] = size(rho_mat);
+% num_param = row*col;
 
-DATA = zeros(32+T,num_param);
+rho_vec = 0.5:0.05:0.55;
+num_param = length(rho_vec);
+
+DATA = zeros(32,num_param);
 
 ZHS_start = ZHS;
 ZHL_start = ZHL;
 ZFS_start = ZFS;
 ZFL_start = ZFL;
 
-VB_HS_start = VB_HS;
-VB_HL_start = VB_HL;
-VB_FS_start = VB_FS;
-VB_FL_start = VB_FL;
-
-Pareto = zeros(T,num_param);
-
 % Iterate over this parameter grid
 for itparam = 1:num_param
     
     % Set the correct parameters for this iteration
-    alpha_v = alpha_v_mat(itparam);
-    alpha_u = alpha_u_mat(itparam);
-    mu = -theta*alpha_u^2/2;
+%     rho = rho_mat(itparam);
+    rho = rho_vec(itparam);
+%     nu = nu_mat(itparam);
+    nu = 0.05/(1-rho);
+    mu = -theta*nu^2/2;
     
     % Initialize matrices of interest
     LAMBDAFVEC_t = zeros(R_length,S);
     DVEC_t = zeros(R_length,S);
     XVEC_t = zeros(R_length,S);
-    TOP1_t = zeros(R_length,S);
-    TOP3_t = zeros(R_length,S);
     PHIFVEC_t = zeros(R_length,S);
+
+    su = sqrt(rho*nu^2);
+    sv = sqrt(nu^2*(1-rho));
     
     % Re-initialize matrices, so every iteration starts at the same
-    % productivity 
+    % productivity
     
     ZHS = ZHS_start;
     ZHL = ZHL_start;
     ZFS = ZFS_start;
     ZFL = ZFL_start;
-    
-    if var_thresh == 1
-        VB_HS = VB_HS_start;
-        VB_HL = VB_HL_start;
-        VB_FS = VB_FS_start;
-        VB_FL = VB_FL_start;
-    end
     
     aseed = 1;
     rng(aseed);
@@ -294,27 +284,20 @@ for itparam = 1:num_param
     for t=1:T
 
         % Determine productivity draws
-        vz_HS = repmat(randn(1,Nsmall),ZHS_length,1);
-        vz_HL = repmat(randn(1,Nlarge),ZHL_length,1);
-        vz_FS = repmat(randn(1,Nsmall),ZFS_length,1);
-        vz_FL = repmat(randn(1,Nlarge),ZFL_length,1);
+        uz_HS = repmat(randn(1,S),ZHS_length,1);
+        uz_HL = repmat(randn(1,S),ZHL_length,1);
+        uz_FS = repmat(randn(1,S),ZFS_length,1);
+        uz_FL = repmat(randn(1,S),ZFL_length,1);
 
-        uz_HS = randn(ZHS_length,Nsmall);
-        uz_HL = randn(ZHL_length,Nlarge);
-        uz_FS = randn(ZFS_length,Nsmall);
-        uz_FL = randn(ZFL_length,Nlarge);
+        vz_HS = randn(ZHS_length,S);
+        vz_HL = randn(ZHL_length,S);
+        vz_FS = randn(ZFS_length,S);
+        vz_FL = randn(ZFL_length,S);
 
-        eps_HS = alpha_u*uz_HS+alpha_v*vz_HS;
-        eps_HL = alpha_u*uz_HL+alpha_v*vz_HL;
-        eps_FS = alpha_u*uz_FS+alpha_v*vz_FS;
-        eps_FL = alpha_u*uz_FL+alpha_v*vz_FL;
-        
-        if var_thresh == 1
-            VB_HS = VB_HS + alpha_v * vz_HS;
-            VB_HL = VB_HL + alpha_v * vz_HL;
-            VB_FS = VB_FS + alpha_v * vz_FS;
-            VB_FL = VB_FL + alpha_v * vz_FL;
-        end
+        eps_HS = su*uz_HS+sv*vz_HS;
+        eps_HL = su*uz_HL+sv*vz_HL;
+        eps_FS = su*uz_FS+sv*vz_FS;
+        eps_FL = su*uz_FL+sv*vz_FL;
 
         % Evolution of productivity draws
         ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+eps_HS(~inactive_HS)));
@@ -329,64 +312,13 @@ for itparam = 1:num_param
             PHIFVEC_t(t,:) = PHIFVEC;
             XVEC_t(t,:) = XVEC; 
             DVEC_t(t,:) = DVEC;
-            DSHM_small = DSHM_small.*repmat(sum(DSHM_small),size(DSHM_small,1),1);
-            DSHM_large = DSHM_large.*repmat(sum(DSHM_large),size(DSHM_large,1),1);
             save_share_small{t} = DSHM_small;
             save_share_large{t} = DSHM_large;
-            save_share_small_S{t} = DSHMS_small;
-            save_share_large_S{t} = DSHMS_large;
             disp(['Loop ',num2str(t),' is finished']);
         end
     
     end
     disp(['Iteration ',num2str(itparam),' is finished']);
-    
-    idx_active_small = true(size(DSHM_small));
-    idx_active_large = true(size(DSHM_large));
-    
-    for t=1:T
-       idx_active_small = idx_active_small & (save_share_small{t}>0);
-       idx_active_large = idx_active_large & (save_share_large{t}>0);
-    end
-    
-    save_share_small_X = save_share_small;
-    save_share_large_X = save_share_large;
-    for z=1:Nsmall
-        for t=1:T
-            int_save_share = zeros(length(save_share_small{t}(:,z)),1);
-            int_save_share(idx_active_small(:,z)) = save_share_small{t}(idx_active_small(:,z),z);
-            save_share_small{t}(:,z) = int_save_share;
-        end
-    end
-    
-    for z=1:Nlarge
-        for t=1:T
-            int_save_share = zeros(length(save_share_large{t}(:,z)),1);
-            int_save_share(idx_active_large(:,z)) = save_share_large{t}(idx_active_large(:,z),z);
-            save_share_large{t}(:,z) = int_save_share;
-        end
-    end
-    
-    for t=1:T
-        save_share_small{t} = save_share_small{t}./repmat(sum(save_share_small{t}),size(save_share_small{t},1),1);
-        save_share_large{t} = save_share_large{t}./repmat(sum(save_share_large{t}),size(save_share_large{t},1),1);
-        TOP1_t(t,small) = save_share_small{t}(1,:);
-        TOP3_t(t,small) = sum(save_share_small{t}(1:3,:));
-        TOP1_t(t,~small) = save_share_large{t}(1,:);
-        TOP3_t(t,~small) = sum(save_share_large{t}(1:3,:));
-    end
-    
-    %%% Save Regression data for Stata
-    ID = (1:S);
-    ID = repmat(ID,R_length,1);
-    YEAR = repmat(RECORD',S,1);
-    DATA1 = [ID(:),YEAR,XVEC_t(:),DVEC_t(:),TOP1_t(:),TOP3_t(:)];
-    fname = sprintf('Results/Data/calibrated_regdata_%d',S);
-    fname2 = sprintf('Results/Data/calibrated_regdata_%d.csv',S);
-    save(fname,'DATA');
-    title1 = {'ID','Year','X','D','TOP1','TOP3'};
-    TT = cell2table(num2cell(DATA1),'VariableNames',title1); 
-    writetable(TT,fname2);
     
     %%%% Compute 30 target moments
     
@@ -500,6 +432,19 @@ for itparam = 1:num_param
     DATA(7,itparam) = stats.beta(2);
     DATA(8,itparam) = std(Dep(:)-stats.beta(1)-stats.beta(2)*Indep(:));    
     
+    %% Generate data for Stata (verification of the above in Stata)
+%     ID = (1:S);
+%     ID = repmat(ID,R_length-1,1);
+%     YEAR = repmat(RECORD(2:end)',S,1);
+%     X_t = XVEC_t(2:end,:);
+%     X_t1 = XVEC_t(1:end-1,:);
+%     DATA1 = [ID(:),YEAR,X_t(:),X_t1(:)];
+%     fname = sprintf('Results/Data/TRIAL_sectoral_regdata_%d',S);
+%     fname2 = sprintf('Results/Data/TRIAL_sectoral_regdata_%d.csv',S);
+%     save(fname,'DATA');
+%     title1 = {'ID','Year','X_t','X_t1'};
+%     TT = cell2table(num2cell(DATA1),'VariableNames',title1);
+%     writetable(TT,fname2);
     
     %%% Moments 9 & 10
     
@@ -508,14 +453,18 @@ for itparam = 1:num_param
     
     clearvars Dep Indep ind
     % Demeaning to control for fixed effects
-
+    del_vec = [];
     for z=1:S
         ind = (XVEC_t(2:end,z)>0) & (XVEC_t(1:end-1,z)>0);
         if sum(ind)>0
             Dep(ind,z) = log(XX(ind,z))-mean(log(XX(ind,z)));
             Indep(ind,z) = log(XX1(ind,z))-mean(log(XX1(ind,z)));
+        else
+            del_vec = [del_vec,z];
         end
     end
+    Dep(:,del_vec) = [];
+    Indep(:,del_vec) = [];
 
     % Regression 
     stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
@@ -529,14 +478,19 @@ for itparam = 1:num_param
     
     clearvars Dep Indep ind
     % Demeaning to control for fixed effects
+    del_vec = [];
     for z=1:S
         ind = (XVEC_t(2:end,z)>0)&(DVEC_t(2:end,z)>0)&(XVEC_t(1:end-1,z)>0)&(DVEC_t(1:end-1,z)>0);
         if sum(ind)>0
             Dep(ind,z) = XX(ind,z)-mean(XX(ind,z));
             Indep(ind,z) = XX1(ind,z)-mean(XX1(ind,z));
+        else
+            del_vec = [del_vec,z]; 
         end
     end
-
+    Dep(:,del_vec) = [];
+    Indep(:,del_vec) = [];
+    
     % Regression
     stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
     DATA(11,itparam) = stats.beta(2);
@@ -653,17 +607,28 @@ for itparam = 1:num_param
             Control = [Control,Control1];
         end
         % Regression w/o controls
-        stats = regstats(Dep',Indep','linear',{'beta','covb'});
-        mom(counter,1) = stats.beta(2);
-
+%         stats = regstats(Dep',Indep','linear',{'beta','covb'});
+%         mom(counter,1) = stats.beta(2);
+        Indep = Indep';
+        Dep = Dep';
+        Indep = [ones(length(Indep),1),Indep];
+        CCC = Indep'*Indep\(Indep'*Dep);
+        mom(counter,1) = CCC(2);
+        
         % Regression w/ controls
+        Dep = Dep';
+        Indep = Indep(:,2)';
         IndCont = [Indep', Control'];
-        stats = regstats(Dep',[Indep', Control'],'linear',{'beta','covb'});
-        mom(counter,2) = stats.beta(2);
+        
+        IntRes = IndCont'*IndCont\(IndCont'*Dep');
+        mom(counter,2) = IntRes(1);
+%         stats = regstats(Dep',[Indep', Control'],'linear',{'beta','covb'});
+%         mom(counter,2) = stats.beta(2);
         
         % Regression for moments 21 & 22
-        stats = regstats(Dep_f',Indep_f','linear',{'beta','covb'});
-        mom(counter,3) = stats.beta(2);
+        mom(counter,3) = Indep_f*Indep_f'\(Indep_f*Dep_f');
+%         stats = regstats(Dep_f',Indep_f','linear',{'beta','covb'});
+%         mom(counter,3) = stats.beta(2);
         
     end
     DATA(17,itparam) = mom(1,1);
@@ -749,11 +714,13 @@ for itparam = 1:num_param
         Indep_f = [small_shares_indep_f,large_shares_indep_f];
 
         % Regression
-        stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
-        mom(counter,1) = stats.beta(2);
+%         stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
+        mom(counter,1) = Indep(:)'*Indep(:)\(Indep(:)'*Dep(:));
+%         mom(counter,1) = stats.beta(2);
 
-        stats = regstats(Dep_f(:),Indep_f(:),'linear',{'beta','covb'});
-        mom(counter,2) = stats.beta(2);
+        mom(counter,2) = Indep_f(:)'*Indep_f(:)\(Indep_f(:)'*Dep_f(:));
+%         stats = regstats(Dep_f(:),Indep_f(:),'linear',{'beta','covb'});
+%         mom(counter,2) = stats.beta(2);
     end
     
     DATA(23,itparam) = mom(1,1);
@@ -830,35 +797,11 @@ for itparam = 1:num_param
     DATA(30,itparam) = std(Delta_f(:));
     
     DATA(3:32,itparam) = DATA(1:30,itparam);
-    DATA(1:2,itparam) = [alpha_v;alpha_u];
+    DATA(1:2,itparam) = [rho;nu];
     
-    % Compute Pareto-Shares
-    
-    for t=1:T
-        [row_s,col_s] = size(save_share_small_S{t});
-        [row_l,col_l] = size(save_share_large_S{t});
-        Rank_small = repmat(log((1:row_s)-1/2)',1,col_s);
-        Rank_large = repmat(log((1:row_l)-1/2)',1,col_l);
-        index_small = save_share_small_S{t}>0; 
-        index_large = save_share_large_S{t}>0;
-        thresh_small = prctile(save_share_small_S{t}(index_small),25);
-        thresh_large = prctile(save_share_large_S{t}(index_large),25);
-        index_small = save_share_small_S{t}>0 & sum(index_small)>10 & save_share_small_S{t} > thresh_small;
-        index_large = save_share_large_S{t}>0 & sum(index_large)>10 & save_share_large_S{t} > thresh_large;
-        Share_small = log(save_share_small_S{t}(index_small));
-        Share_large = log(save_share_large_S{t}(index_large));
-        Rank = [Rank_small(index_small);Rank_large(index_large)];
-        Share = [Share_small;Share_large];
-        stats = regstats(Rank,Share,'linear',{'beta','covb'});
-        Pareto(t,itparam) = stats.beta(2);       
-    end
-    DATA(33:end,itparam) = Pareto(:,itparam);
-%     hold on
-%     scatter(Rank,Share)
-%     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/30DynMom_var_thresh%d.csv',S);
+fname = sprintf('Results/Moments/30DynMom_upper_end_%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
