@@ -235,14 +235,13 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_u_vec = [0.07,0.1,0.075];
-alpha_v_vec = [0.045,0.025,0.04];
-% [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
-% [row,col] = size(alpha_v_mat);
-% num_param = row*col;
-num_param = length(alpha_u_vec); 
+alpha_v_vec = 0.035:0.005:0.05;
+alpha_u_vec = [0.07,0.075,0.08:0.01:0.12];
+[alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
+[row,col] = size(alpha_v_mat);
+num_param = row*col;
 
-DATA = zeros(32,num_param);
+DATA = zeros(38,num_param);
 
 ZHS_start = ZHS;
 ZHL_start = ZHL;
@@ -260,10 +259,8 @@ Pareto = zeros(T,num_param);
 for itparam = 1:num_param
     
     % Set the correct parameters for this iteration
-%     alpha_v = alpha_v_mat(itparam);
-%     alpha_u = alpha_u_mat(itparam);
-    alpha_v = alpha_v_vec(itparam);
-    alpha_u = alpha_u_vec(itparam);
+    alpha_v = alpha_v_mat(itparam);
+    alpha_u = alpha_u_mat(itparam);
     mu = -theta*alpha_u^2/2;
     
     % Initialize matrices of interest
@@ -680,8 +677,96 @@ for itparam = 1:num_param
     DATA(21,itparam) = mom(1,3);
     DATA(22,itparam) = mom(2,3);
     
-        
+    
     % Moments 23 - 26
+    mom = zeros(length(k_vec),2);
+    counter = 0;
+    for k = k_vec
+        
+        small_shares_dep = zeros(T-k,0);
+        small_shares_indep = zeros(T-k,0);
+        small_shares_dep_f = zeros(T-k,0);
+        small_shares_indep_f = zeros(T-k,0);
+        counter = counter + 1;
+        for z=1:Nsmall
+            clearvars small_shares1_dep small_shares2_dep small_shares1_indep small_shares2_indep
+            % Indicator for being active in all periods
+            dim = size(DSHM_small);
+            idx_z_active = true(dim(1),1);
+            for t=1:T
+               idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
+            end
+            % Indicator for belonging to the top 20% among all active firms in
+            % year 1
+            idx20 = save_share_small{1}(idx_z_active,z)>=quantile(save_share_small{1}(idx_z_active,z),0.8);
+            for t=1:T-k
+               int_dep = save_share_small{t+k}(idx_z_active,z) - save_share_small{t}(idx_z_active,z);
+               int2_dep = int_dep(idx20);
+               int_indep = save_share_small{t}(idx_z_active,z);
+               int2_indep = int_indep(idx20);
+               small_shares1_dep(t,:) = int_dep';
+               small_shares1_indep(t,:) = int_indep';
+               small_shares2_dep(t,:) = int2_dep';
+               small_shares2_indep(t,:) = int2_indep';
+            end
+            % This is the target matrix that contains a matrix with T rows and
+            % where each column represents the development of one active firm
+            % in any sector over time
+            small_shares_dep = [small_shares_dep,small_shares1_dep];
+            small_shares_indep = [small_shares_indep,small_shares1_indep];
+            small_shares_dep_f = [small_shares_dep_f,small_shares2_dep];
+            small_shares_indep_f = [small_shares_indep_f,small_shares2_indep];
+        end
+
+        large_shares_dep = zeros(T-k,0);
+        large_shares_indep = zeros(T-k,0);
+        large_shares_dep_f = zeros(T-k,0);
+        large_shares_indep_f = zeros(T-k,0);
+        for z=1:Nlarge
+            clearvars large_shares1_dep large_shares2_dep large_shares1_indep large_shares2_indep 
+            dim = size(DSHM_large);
+            idx_z_active = true(dim(1),1);
+            for t=1:T
+               idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
+            end
+            idx20 = save_share_large{1}(idx_z_active,z)>=quantile(save_share_large{1}(idx_z_active,z),0.8);
+            for t=1:T-k
+                int_dep = save_share_large{t+k}(idx_z_active,z) - save_share_large{t}(idx_z_active,z);
+                int2_dep = int_dep(idx20);
+                int_indep = save_share_large{t}(idx_z_active,z);
+                int2_indep = int_indep(idx20);
+                large_shares1_dep(t,:) = int_dep';
+                large_shares1_indep(t,:) = int_indep';
+                large_shares2_dep(t,:) = int2_dep';
+                large_shares2_indep(t,:) = int2_indep';
+            end
+            large_shares_dep = [large_shares_dep,large_shares1_dep];
+            large_shares_indep = [large_shares_indep,large_shares1_indep];
+            large_shares_dep_f = [large_shares_dep_f,large_shares2_dep];
+            large_shares_indep_f = [large_shares_indep_f,large_shares2_indep];
+        end
+
+        Dep = [small_shares_dep,large_shares_dep];
+        Indep = [small_shares_indep,large_shares_indep];
+
+        Dep_f = [small_shares_dep_f,large_shares_dep_f];
+        Indep_f = [small_shares_indep_f,large_shares_indep_f];
+
+        % Regression
+        stats = regstats(Dep(:),Indep(:),'linear',{'beta','covb'});
+        mom(counter,1) = stats.beta(2);
+
+        stats = regstats(Dep_f(:),Indep_f(:),'linear',{'beta','covb'});
+        mom(counter,2) = stats.beta(2);
+    end
+    
+    DATA(23,itparam) = mom(1,1);
+    DATA(24,itparam) = mom(2,1);
+    DATA(25,itparam) = mom(1,2);
+    DATA(26,itparam) = mom(2,2);
+    
+        
+    % Moments 23' - 26'
     mom = zeros(length(k_vec),2);
     counter = 0;
     for k = k_vec
@@ -763,27 +848,80 @@ for itparam = 1:num_param
         mom(counter,2) = stats.beta(2);
     end
     
-    DATA(23,itparam) = mom(1,1);
-    DATA(24,itparam) = mom(2,1);
-    DATA(25,itparam) = mom(1,2);
-    DATA(26,itparam) = mom(2,2);
+    DATA(27,itparam) = mom(1,1);
+    DATA(28,itparam) = mom(2,1);
+    DATA(29,itparam) = mom(1,2);
+    DATA(30,itparam) = mom(2,2);
     
     % Moment 27
     
     Delta = log(XVEC_t(2:end,:))-log(XVEC_t(1:end-1,:));
     ind = (XVEC_t(2:end,:)>0) & (XVEC_t(1:end-1,:)>0);
     Delta = Delta(ind);
-    DATA(27,itparam) = std(Delta);
+    DATA(31,itparam) = std(Delta);
     
     % Moment 28
     
     Delta = (XVEC_t(2:end,:)./DVEC_t(2:end,:))-(XVEC_t(1:end-1,:)./DVEC_t(1:end-1,:));
     ind = (XVEC_t(2:end,:)>0) & (DVEC_t(2:end,:)>0) & (XVEC_t(1:end-1,:)>0) & (DVEC_t(1:end-1,:)>0);
     Delta = Delta(ind);
-    DATA(28,itparam) = std(Delta);
-    
+    DATA(32,itparam) = std(Delta);
     
     % Moments 29 & 30
+    
+    small_shares = zeros(T-1,0);
+    small_shares_f = zeros(T-1,0);
+    for z=1:Nsmall
+        clearvars small_shares1 small_shares2
+        % Indicator for being active in all periods
+        dim = size(DSHM_small);
+        idx_z_active = true(dim(1),1);
+        for t=1:T
+           idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
+        end
+        % Indicator for belonging to the top 20% among all active firms in
+        % year 1
+        idx20 = save_share_small{1}(idx_z_active,z)>=quantile(save_share_small{1}(idx_z_active,z),0.8);
+        for t=1:T-1
+           int = save_share_small{t+1}(idx_z_active,z)-save_share_small{t}(idx_z_active,z);
+           int2 = int(idx20);
+           small_shares1(t,:) = int';
+           small_shares2(t,:) = int2';
+        end
+        % This is the target matrix that contains a matrix with T rows and
+        % where each column represents the development of one active firm
+        % in any sector over time
+        small_shares = [small_shares,small_shares1];
+        small_shares_f = [small_shares_f,small_shares2];
+    end
+    
+    large_shares = zeros(T-1,0);
+    large_shares_f = zeros(T-1,0);
+    for z=1:Nlarge
+        clearvars large_shares1 large_shares2
+        dim = size(DSHM_large);
+        idx_z_active = true(dim(1),1);
+        for t=1:T
+           idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
+        end
+        idx20 = save_share_large{1}(idx_z_active,z)>=quantile(save_share_large{1}(idx_z_active,z),0.8);
+        for t=1:T-1
+           int = save_share_large{t+1}(idx_z_active,z)-save_share_large{t}(idx_z_active,z);
+           int2 = int(idx20);
+           large_shares1(t,:) = int';
+           large_shares2(t,:) = int2';
+        end
+        large_shares = [large_shares,large_shares1];
+        large_shares_f = [large_shares_f,large_shares2]; 
+    end
+    
+    Delta = [small_shares,large_shares];
+    Delta_f = [small_shares_f,large_shares_f];
+    
+    DATA(33,itparam) = std(Delta(:));
+    DATA(34,itparam) = std(Delta_f(:));
+    
+    % Moments 29' & 30'
     
     small_shares = zeros(T-1,0);
     small_shares_f = zeros(T-1,0);
@@ -834,10 +972,10 @@ for itparam = 1:num_param
     Delta = [small_shares,large_shares];
     Delta_f = [small_shares_f,large_shares_f];
     
-    DATA(29,itparam) = std(Delta(:));
-    DATA(30,itparam) = std(Delta_f(:));
+    DATA(35,itparam) = std(Delta(:));
+    DATA(36,itparam) = std(Delta_f(:));
     
-    DATA(3:32,itparam) = DATA(1:30,itparam);
+    DATA(3:38,itparam) = DATA(1:36,itparam);
     DATA(1:2,itparam) = [alpha_v;alpha_u];
     
 %     % Compute Pareto-Shares
@@ -866,7 +1004,7 @@ for itparam = 1:num_param
 %     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/30DynMom_calibration_plots%d.csv',S);
+fname = sprintf('Results/Moments/30DynMom_rel_stand%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
