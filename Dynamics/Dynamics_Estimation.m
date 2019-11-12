@@ -45,7 +45,7 @@ vMU = 1;
 BER = 1;
 
 % Variable Threshold
-var_thresh = 1;
+% var_thresh = 1;
 
 % Scale of model (i.e. number of sectors)
 scale = 3/4; %1 %3/4 %21
@@ -249,10 +249,14 @@ ZHL_start = ZHL;
 ZFS_start = ZFS;
 ZFL_start = ZFL;
 
+% Need to keep track of initial threshold only for home firms (stays the
+% same for foreign firms)
 VB_HS_start = VB_HS;
 VB_HL_start = VB_HL;
-VB_FS_start = VB_FS;
-VB_FL_start = VB_FL;
+
+% Need to keep track of initial AR(1) component
+VZ_small_start = (log(RTS)-muT)/theta;
+VZ_large_start = (log(RTL)-muT)/theta;
 
 Pareto = zeros(T,num_param);
 
@@ -265,6 +269,7 @@ for itparam = 1:num_param
     alpha_v = alpha_v_vec(itparam);
     alpha_u = alpha_u_vec(itparam);
     mu = -theta*alpha_u^2/2;
+    rho_v = sqrt(1-(theta*alpha_v/sigmaT)^2);
     
     % Initialize matrices of interest
     LAMBDAFVEC_t = zeros(R_length,S);
@@ -276,19 +281,19 @@ for itparam = 1:num_param
     
     % Re-initialize matrices, so every iteration starts at the same
     % productivity 
-    
     ZHS = ZHS_start;
     ZHL = ZHL_start;
     ZFS = ZFS_start;
     ZFL = ZFL_start;
     
-    if var_thresh == 1
-        VB_HS = VB_HS_start;
-        VB_HL = VB_HL_start;
-        VB_FS = VB_FS_start;
-        VB_FL = VB_FL_start;
-    end
+    % Re-initialize thresholds (only for home firms)
+    VB_HS = VB_HS_start;
+    VB_HL = VB_HL_start;
     
+    % Re-initialize AR(1)-components (only for home firms)
+    VZ_HS = repmat(VZ_small_start,ZHS_length,1);
+    VZ_HL = repmat(VZ_large_start,ZHL_length,1);
+
     aseed = 1;
     rng(aseed);
 
@@ -297,33 +302,34 @@ for itparam = 1:num_param
     for t=1:T
 
         % Determine productivity draws
-        vz_HS = repmat(randn(1,Nsmall),ZHS_length,1);
-        vz_HL = repmat(randn(1,Nlarge),ZHL_length,1);
-        vz_FS = repmat(randn(1,Nsmall),ZFS_length,1);
-        vz_FL = repmat(randn(1,Nlarge),ZFL_length,1);
-
-        uz_HS = randn(ZHS_length,Nsmall);
-        uz_HL = randn(ZHL_length,Nlarge);
-        uz_FS = randn(ZFS_length,Nsmall);
-        uz_FL = randn(ZFL_length,Nlarge);
-
-        eps_HS = alpha_u*uz_HS+alpha_v*vz_HS;
-        eps_HL = alpha_u*uz_HL+alpha_v*vz_HL;
-        eps_FS = alpha_u*uz_FS+alpha_v*vz_FS;
-        eps_FL = alpha_u*uz_FL+alpha_v*vz_FL;
         
-        if var_thresh == 1
-            VB_HS = VB_HS + alpha_v * vz_HS;
-            VB_HL = VB_HL + alpha_v * vz_HL;
-            VB_FS = VB_FS + alpha_v * vz_FS;
-            VB_FL = VB_FL + alpha_v * vz_FL;
-        end
+        % Sectoral Draws (only for home firms)
+        epsv_HS = repmat(randn(1,Nsmall),ZHS_length,1);
+        epsv_HL = repmat(randn(1,Nlarge),ZHL_length,1);
+
+        % Firm-level Draws
+        epsu_HS = randn(ZHS_length,Nsmall);
+        epsu_HL = randn(ZHL_length,Nlarge);
+        epsu_FS = randn(ZFS_length,Nsmall);
+        epsu_FL = randn(ZFL_length,Nlarge);
+        
+        % Save previous threshold (needed for evolution)
+        VB_HS_old = VB_HS;
+        VB_HL_old = VB_HL;
+        
+        % Evolution of log productivity thresholds (only for home firms)
+        VB_HS = VB_HS - (1-rho_v)*VZ_HS + alpha_v*epsv_HS;
+        VB_HL = VB_HL - (1-rho_v)*VZ_HL + alpha_v*epsv_HL;
+        
+        % Keep track of AR(1) component
+        VZ_HS = rho_v*VZ_HS + alpha_v*epsv_HS;
+        VZ_HL = rho_v*VZ_HL + alpha_v*epsv_HL;       
 
         % Evolution of productivity draws
-        ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS(~inactive_HS)+mu+eps_HS(~inactive_HS)));
-        ZHL(~inactive_HL) = exp(VB_HL(~inactive_HL)+abs(log(ZHL(~inactive_HL))-VB_HL(~inactive_HL)+mu+eps_HL(~inactive_HL)));
-        ZFS(~inactive_FS) = exp(VB_FS(~inactive_FS)+abs(log(ZFS(~inactive_FS))-VB_FS(~inactive_FS)+mu+eps_FS(~inactive_FS)));
-        ZFL(~inactive_FL) = exp(VB_FL(~inactive_FL)+abs(log(ZFL(~inactive_FL))-VB_FL(~inactive_FL)+mu+eps_FL(~inactive_FL)));
+        ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS_old(~inactive_HS)+mu+alpha_u*epsu_HS(~inactive_HS)));
+        ZHL(~inactive_HL) = exp(VB_HL(~inactive_HL)+abs(log(ZHL(~inactive_HL))-VB_HL_old(~inactive_HL)+mu+alpha_u*epsu_HL(~inactive_HL)));
+        ZFS(~inactive_FS) = exp(VB_FS(~inactive_FS)+abs(log(ZFS(~inactive_FS))-VB_FS(~inactive_FS)+mu+alpha_u*epsu_FS(~inactive_FS)));
+        ZFL(~inactive_FL) = exp(VB_FL(~inactive_FL)+abs(log(ZFL(~inactive_FL))-VB_FL(~inactive_FL)+mu+alpha_u*epsu_FL(~inactive_FL)));
 
         % If the year is part of RECORD, record PE results
         if any(RECORD==t)
@@ -866,7 +872,7 @@ for itparam = 1:num_param
 %     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/30DynMom_calibration_plots%d.csv',S);
+fname = sprintf('Results/Moments/30DynMom_calibration_plots_test%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
