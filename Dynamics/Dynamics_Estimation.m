@@ -235,8 +235,10 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_u_vec = [0.07,0.1,0.075];
-alpha_v_vec = [0.045,0.025,0.04];
+% alpha_u_vec = [0.05 0.06:0.005:0.075 0.08:0.01:0.11];
+% alpha_v_vec = [0.02:0.005:0.045];
+alpha_u_vec = [0.07 0.1 0.075];
+alpha_v_vec = [0.045 0.025 0.04];
 % [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 % [row,col] = size(alpha_v_mat);
 % num_param = row*col;
@@ -338,51 +340,18 @@ for itparam = 1:num_param
             PHIFVEC_t(t,:) = PHIFVEC;
             XVEC_t(t,:) = XVEC; 
             DVEC_t(t,:) = DVEC;
-            DSHM_small = DSHM_small.*repmat(sum(DSHM_small),size(DSHM_small,1),1);
-            DSHM_large = DSHM_large.*repmat(sum(DSHM_large),size(DSHM_large,1),1);
             save_share_small{t} = DSHM_small;
             save_share_large{t} = DSHM_large;
             save_share_small_S{t} = DSHMS_small;
             save_share_large_S{t} = DSHMS_large;
-            save_share_small_all{t} = DSHM_small;
-            save_share_large_all{t} = DSHM_large; 
             disp(['Loop ',num2str(t),' is finished']);
         end
     
     end
     disp(['Iteration ',num2str(itparam),' is finished']);
     
-    idx_active_small = true(size(DSHM_small));
-    idx_active_large = true(size(DSHM_large));
-    
+
     for t=1:T
-       idx_active_small = idx_active_small & (save_share_small{t}>0);
-       idx_active_large = idx_active_large & (save_share_large{t}>0);
-    end
-    
-%     save_share_small_X = save_share_small;
-%     save_share_large_X = save_share_large;
-    for z=1:Nsmall
-        for t=1:T
-            int_save_share = zeros(length(save_share_small{t}(:,z)),1);
-            int_save_share(idx_active_small(:,z)) = save_share_small{t}(idx_active_small(:,z),z);
-            save_share_small{t}(:,z) = int_save_share;
-        end
-    end
-    
-    for z=1:Nlarge
-        for t=1:T
-            int_save_share = zeros(length(save_share_large{t}(:,z)),1);
-            int_save_share(idx_active_large(:,z)) = save_share_large{t}(idx_active_large(:,z),z);
-            save_share_large{t}(:,z) = int_save_share;
-        end
-    end
-    
-    for t=1:T
-        save_share_small_all{t} = save_share_small{t}./repmat(sum(save_share_small_all{t}),size(save_share_small_all{t},1),1);
-        save_share_large_all{t} = save_share_large{t}./repmat(sum(save_share_large_all{t}),size(save_share_large_all{t},1),1);
-        save_share_small{t} = save_share_small{t}./repmat(sum(save_share_small{t}),size(save_share_small{t},1),1);
-        save_share_large{t} = save_share_large{t}./repmat(sum(save_share_large{t}),size(save_share_large{t},1),1);
         TOP1_t(t,small) = save_share_small{t}(1,:);
         TOP3_t(t,small) = sum(save_share_small{t}(1:3,:));
         TOP1_t(t,~small) = save_share_large{t}(1,:);
@@ -396,13 +365,13 @@ for itparam = 1:num_param
 %     DATA1 = [ID(:),YEAR,XVEC_t(:),DVEC_t(:),TOP1_t(:),TOP3_t(:)];
 %     fname = sprintf('Results/Data/calibrated_regdata_%d',S);
 %     fname2 = sprintf('Results/Data/calibrated_regdata_%d.csv',S);
-%     save(fname,'DATA');
+%     save(fname,'DATA1');
 %     title1 = {'ID','Year','X','D','TOP1','TOP3'};
 %     TT = cell2table(num2cell(DATA1),'VariableNames',title1); 
 %     writetable(TT,fname2);
     
+
     %%%% Compute 30 target moments
-    
     
     %%% Moments 1 & 2
     
@@ -703,15 +672,15 @@ for itparam = 1:num_param
             dim = size(DSHM_small);
             idx_z_active = true(dim(1),1);
             for t=1:T
-               idx_z_active = idx_z_active & (save_share_small_all{t}(:,z)>0);
+               idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
             end
             % Indicator for belonging to the top 20% among all active firms in
             % year 1
-            idx20 = save_share_small_all{1}(idx_z_active,z)>=quantile(save_share_small_all{1}(idx_z_active,z),0.8);
+            idx20 = save_share_small{1}(idx_z_active,z)>=quantile(save_share_small{1}(idx_z_active,z),0.8);
             for t=1:T-k
-               int_dep = save_share_small_all{t+k}(idx_z_active,z) - save_share_small_all{t}(idx_z_active,z);
+               int_dep = save_share_small{t+k}(idx_z_active,z) - save_share_small{t}(idx_z_active,z);
                int2_dep = int_dep(idx20);
-               int_indep = save_share_small_all{t}(idx_z_active,z);
+               int_indep = save_share_small{t}(idx_z_active,z);
                int2_indep = int_indep(idx20);
                small_shares1_dep(t,:) = int_dep';
                small_shares1_indep(t,:) = int_indep';
@@ -736,13 +705,13 @@ for itparam = 1:num_param
             dim = size(DSHM_large);
             idx_z_active = true(dim(1),1);
             for t=1:T
-               idx_z_active = idx_z_active & (save_share_large_all{t}(:,z)>0); 
+               idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
             end
-            idx20 = save_share_large_all{1}(idx_z_active,z)>=quantile(save_share_large_all{1}(idx_z_active,z),0.8);
+            idx20 = save_share_large{1}(idx_z_active,z)>=quantile(save_share_large{1}(idx_z_active,z),0.8);
             for t=1:T-k
-                int_dep = save_share_large_all{t+k}(idx_z_active,z) - save_share_large_all{t}(idx_z_active,z);
+                int_dep = save_share_large{t+k}(idx_z_active,z) - save_share_large{t}(idx_z_active,z);
                 int2_dep = int_dep(idx20);
-                int_indep = save_share_large_all{t}(idx_z_active,z);
+                int_indep = save_share_large{t}(idx_z_active,z);
                 int2_indep = int_indep(idx20);
                 large_shares1_dep(t,:) = int_dep';
                 large_shares1_indep(t,:) = int_indep';
@@ -799,13 +768,13 @@ for itparam = 1:num_param
         dim = size(DSHM_small);
         idx_z_active = true(dim(1),1);
         for t=1:T
-           idx_z_active = idx_z_active & (save_share_small_all{t}(:,z)>0);
+           idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
         end
         % Indicator for belonging to the top 20% among all active firms in
         % year 1
-        idx20 = save_share_small_all{1}(idx_z_active,z)>=quantile(save_share_small_all{1}(idx_z_active,z),0.8);
+        idx20 = save_share_small{1}(idx_z_active,z)>=quantile(save_share_small{1}(idx_z_active,z),0.8);
         for t=1:T-1
-           int = save_share_small_all{t+1}(idx_z_active,z)-save_share_small_all{t}(idx_z_active,z);
+           int = save_share_small{t+1}(idx_z_active,z)-save_share_small{t}(idx_z_active,z);
            int2 = int(idx20);
            small_shares1(t,:) = int';
            small_shares2(t,:) = int2';
@@ -824,11 +793,11 @@ for itparam = 1:num_param
         dim = size(DSHM_large);
         idx_z_active = true(dim(1),1);
         for t=1:T
-           idx_z_active = idx_z_active & (save_share_large_all{t}(:,z)>0); 
+           idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
         end
-        idx20 = save_share_large_all{1}(idx_z_active,z)>=quantile(save_share_large_all{1}(idx_z_active,z),0.8);
+        idx20 = save_share_large{1}(idx_z_active,z)>=quantile(save_share_large{1}(idx_z_active,z),0.8);
         for t=1:T-1
-           int = save_share_large_all{t+1}(idx_z_active,z)-save_share_large_all{t}(idx_z_active,z);
+           int = save_share_large{t+1}(idx_z_active,z)-save_share_large{t}(idx_z_active,z);
            int2 = int(idx20);
            large_shares1(t,:) = int';
            large_shares2(t,:) = int2';
@@ -872,7 +841,7 @@ for itparam = 1:num_param
 %     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/30DynMom_calibration_plots_test%d.csv',S);
+fname = sprintf('Results/Moments/TTTEEESSSTTT%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
