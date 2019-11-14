@@ -2,7 +2,7 @@
 
 *Import Data
 clear all
-cd "/Users/Maximilian/Documents/Princeton/RA Itskhoki/Itskhoki and Gaubert (2018)/Clean Code/Dynamics/Results/Data"
+cd "/Users/Maximilian/Documents/Princeton/RA Itskhoki/Itskhoki and Gaubert (2018)/Clean Code/Dynamics/Results/Calibrating_Graphs1"
 * import delimited calibrated_regdata_357
 import delimited calibrated_regdata_9996
 
@@ -30,7 +30,7 @@ eststo Dynamics_1: xtreg log_x top3 i.year, fe
 eststo Dynamics_2: reg d.log_x d.top3
 
 
-keep if year == 1 | year == 11
+keep if year == 1 | year == 10
 sort id year
 gen Delta_log_x = log_x[_n+1]-log_x[_n]
 gen Delta_top_3 = top3[_n+1]-top3[_n]
