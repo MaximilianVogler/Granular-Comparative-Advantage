@@ -268,7 +268,7 @@ VZ_large_start = (log(RTL)-muT)/theta;
 
 Pareto = zeros(T,num_param);
 
-mom = zeros(4,1);
+mom = zeros(7,num_param);
 
 % How many percentiles do we need for plotting
 ptiles = 10;
@@ -441,6 +441,22 @@ for itparam = 1:num_param
     
     VOL_10_SAVE(:,itparam) = vol_10;
     
+    % Turnover moments
+    idx_0 = LAMBDAFVEC_0>prctile(LAMBDAFVEC_0,95);
+    idx_10 = LAMBDAFVEC_t(10,:)>prctile(LAMBDAFVEC_t(10,:),95);
+    idx_20 = LAMBDAFVEC_t(11,:)>prctile(LAMBDAFVEC_t(11,:),95);
+
+
+    mom(1:2,itparam) = [alpha_v;alpha_u];
+    mom(3,itparam) = sum(idx_0 & idx_10)/sum(idx_0);
+    mom(4,itparam) = sum(idx_0 & idx_20)/sum(idx_0);
+
+    % Variance decomposition moments
+    mom(5,itparam) = var(DELTA_10_PHI)/var(DELTA_10_LAMBDA)*100;
+    mom(6,itparam) = var(DELTA_10_GAMMA)/var(DELTA_10_LAMBDA)*100;
+    Cov_Mat = cov(DELTA_10_PHI,DELTA_10_GAMMA);
+    mom(7,itparam) = Cov_Mat(2)/var(DELTA_10_LAMBDA)*100;
+    
     if itparam == 1
         
         %%% Save Regression data for Stata
@@ -475,27 +491,6 @@ for itparam = 1:num_param
         set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
         ffname = sprintf('Results/Calibrating_Graphs1/mean_reversion%d.png',itparam);
         saveas(gcf,ffname)
-
-        % Turnover moments
-        idx_0 = LAMBDAFVEC_0>prctile(LAMBDAFVEC,95);
-        idx_10 = LAMBDAFVEC_t(10,:)>prctile(LAMBDAFVEC_t(10,:),95);
-        idx_20 = LAMBDAFVEC_t(11,:)>prctile(LAMBDAFVEC_t(11,:),95);
-             
-        
-        mom(1:2,1) = [alpha_v;alpha_u];
-        mom(3,1) = sum(idx_0 & idx_10)/sum(idx_0);
-        mom(4,1) = sum(idx_0 & idx_20)/sum(idx_0);
-        
-        % Variance decomposition moments
-        mom(5,1) = var(DELTA_10_PHI)/var(DELTA_10_LAMBDA)*100;
-        mom(6,1) = var(DELTA_10_GAMMA)/var(DELTA_10_LAMBDA)*100;
-        Cov_Mat = cov(DELTA_10_PHI,DELTA_10_GAMMA);
-        mom(7,1) = Cov_Mat(2)/var(DELTA_10_LAMBDA)*100;
-        
-        % Save Moments
-        fname = sprintf('Results/Calibrating_Graphs1/turnover_ANOVA%d.csv',itparam);
-        TTT = cell2table(num2cell(mom));
-        writetable(TTT,fname);
         
         % Plot volatility graph
         figure(2)
@@ -512,6 +507,11 @@ for itparam = 1:num_param
     
 end
 
+% Save Moments
+fname = sprintf('Results/Calibrating_Graphs1/turnover_ANOVA.csv');
+TTT = cell2table(num2cell(mom));
+writetable(TTT,fname);
+        
 %% DECOMPOSITION OF MEAN REVERSION AND VOLATILITY INTO IDIOSYNCRATIC AND AGGREGATE EFFECTS
 figure(3)
 MM5 = bar(MEAN_50_SAVE,'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33);
