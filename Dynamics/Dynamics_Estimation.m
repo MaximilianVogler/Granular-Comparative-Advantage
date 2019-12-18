@@ -235,14 +235,14 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-% alpha_u_vec = [0.05 0.06:0.005:0.075 0.08:0.01:0.11];
-% alpha_v_vec = [0.02:0.005:0.045];
-alpha_u_vec = [0.07 0.1 0.075];
-alpha_v_vec = [0.045 0.025 0.04];
-% [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
-% [row,col] = size(alpha_v_mat);
-% num_param = row*col;
-num_param = length(alpha_u_vec); 
+% alpha_u_vec = [0.059:0.0001:0.06];
+alpha_u_vec = [0.0595];
+% alpha_v_vec = [0.029];
+alpha_v_vec = [0.0];
+[alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
+[row,col] = size(alpha_v_mat);
+num_param = row*col;
+% num_param = length(alpha_u_vec); 
 
 DATA = zeros(32,num_param);
 
@@ -266,10 +266,10 @@ Pareto = zeros(T,num_param);
 for itparam = 1:num_param
     
     % Set the correct parameters for this iteration
-%     alpha_v = alpha_v_mat(itparam);
-%     alpha_u = alpha_u_mat(itparam);
-    alpha_v = alpha_v_vec(itparam);
-    alpha_u = alpha_u_vec(itparam);
+    alpha_v = alpha_v_mat(itparam);
+    alpha_u = alpha_u_mat(itparam);
+%     alpha_v = alpha_v_vec(itparam);
+%     alpha_u = alpha_u_vec(itparam);
     mu = -theta*alpha_u^2/2;
     rho_v = sqrt(1-(theta*alpha_v/sigmaT)^2);
     
@@ -841,7 +841,7 @@ for itparam = 1:num_param
 %     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/TTTEEESSSTTT%d.csv',S);
+fname = sprintf('Results/Moments/alpha_v_zerow%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 

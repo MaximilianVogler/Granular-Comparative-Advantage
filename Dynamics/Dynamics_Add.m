@@ -241,10 +241,10 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-alpha_u_vec = [0.06,0,0.06];
-alpha_v_vec = [0.03,0.03,0];
-% alpha_u_vec = 0.06;
-% alpha_v_vec = 0.03;
+% alpha_u_vec = [0.0595,0,0.0595];
+% alpha_v_vec = [0.029,0.029,0];
+alpha_u_vec = 0.0595;
+alpha_v_vec = 0.029;
 % [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 % [row,col] = size(alpha_v_mat);
 % num_param = row*col;
@@ -323,6 +323,9 @@ for itparam = 1:num_param
     rng(aseed);
 
     counter = 0;
+    
+   %%%% JUST FOR DEBUGGING
+   XX = zeros(S,1);
     
     for t=1:T
 
@@ -457,6 +460,17 @@ for itparam = 1:num_param
     Cov_Mat = cov(DELTA_10_PHI,DELTA_10_GAMMA);
     mom(7,itparam) = Cov_Mat(2)/var(DELTA_10_LAMBDA)*100;
     
+    % Granular contribution
+    mom(8,itparam) = var(DELTA_GAMMAFVEC_t(2,:))/var(DELTA_LAMBDAFVEC_t(2,:))*100;
+    mom(9,itparam) = var(DELTA_10_GAMMA)/var(DELTA_10_LAMBDA)*100; % Same as mom(6), just for clarity of illustration
+    mom(10,itparam) = var(DELTA_GAMMAFVEC_t(end,:))/var(DELTA_LAMBDAFVEC_t(end,:))*100;
+    
+    % Share in aggregate exports
+    XX = sort(LAMBDAFVEC_0 .* ALPHA' * YF,'descend');
+    mom(11,itparam) = sum(XX(1:100))/sum(XX);
+    mom(12,itparam) = sum(XX(1:300))/sum(XX);
+    
+    
     if itparam == 1
         
         %%% Save Regression data for Stata
@@ -464,8 +478,8 @@ for itparam = 1:num_param
         ID = repmat(ID,R_length,1);
         YEAR = repmat(RECORD',S,1);
         DATA1 = [ID(:),YEAR,XVEC_t(:),DVEC_t(:),TOP1_t(:),TOP3_t(:)];
-        fname = sprintf('Results/Calibrating_Graphs1/calibrated_regdata_%d',S);
-        fname2 = sprintf('Results/Calibrating_Graphs1/calibrated_regdata_%d.csv',S);
+        fname = sprintf('Results/Calibrating_Graphs4/calibrated_regdata_BC_%d',S);
+        fname2 = sprintf('Results/Calibrating_Graphs4/calibrated_regdata_BC_%d.csv',S);
         save(fname,'DATA1');
         title1 = {'ID','Year','X','D','TOP1','TOP3'};
         TT = cell2table(num2cell(DATA1),'VariableNames',title1); 
@@ -489,7 +503,7 @@ for itparam = 1:num_param
         LPCT0 = LPCT;
         LPCT0(5)=0;
         set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-        ffname = sprintf('Results/Calibrating_Graphs1/mean_reversion%d.png',itparam);
+        ffname = sprintf('Results/Calibrating_Graphs4/mean_reversion_BC%d.png',itparam);
         saveas(gcf,ffname)
         
         % Plot volatility graph
@@ -501,19 +515,19 @@ for itparam = 1:num_param
         set(gca,'FontSize',16)
         set(gca,'xtick',[0.5:1:9.5 10.55])
         set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-        ffname = sprintf('Results/Calibrating_Graphs1/volatility%d.png',itparam);
+        ffname = sprintf('Results/Calibrating_Graphs4/volatility_BC%d.png',itparam);
         saveas(gcf,ffname)
     end
     
 end
 
 % Save Moments
-fname = sprintf('Results/Calibrating_Graphs1/turnover_ANOVA.csv');
+fname = sprintf('Results/Calibrating_Graphs4/turnover_ANOVA_BC.csv');
 TTT = cell2table(num2cell(mom));
 writetable(TTT,fname);
         
 %% DECOMPOSITION OF MEAN REVERSION AND VOLATILITY INTO IDIOSYNCRATIC AND AGGREGATE EFFECTS
-figure(3)
+figure(5)
 MM5 = bar(MEAN_50_SAVE,'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33);
 hold on
 MM2 = bar(MEAN_20_SAVE,'FaceColor','[0.900, 0.20, 0.05]');
@@ -521,14 +535,14 @@ lgd = legend([MM2(1),MM5(1)],'50 years','20 years');
 set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
 ylabel('Expected change in export share, $\Delta \Lambda_z^\ast$','interpreter','latex','fontsize',20)
 xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ffname = sprintf('Results/Calibrating_Graphs1/combined_mean_reversion.png');
+ffname = sprintf('Results/Calibrating_Graphs4/combined_mean_reversion_BC.png');
 saveas(gcf,ffname)
 
-figure(4)
+figure(6)
 VOL1 = bar(VOL_10_SAVE,'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33);
 % lgd = legend([MM2(1),MM5(1)],'20 years','50 years');
 % set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
 ylabel('Variation in export share, $\mathrm{std}(\Delta \Lambda_z^\ast)$','interpreter','latex','fontsize',20)
 xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ffname = sprintf('Results/Calibrating_Graphs1/combined_volatility.png');
+ffname = sprintf('Results/Calibrating_Graphs4/combined_volatility_BC.png');
 saveas(gcf,ffname)
