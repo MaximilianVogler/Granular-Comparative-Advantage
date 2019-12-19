@@ -235,10 +235,10 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-% alpha_u_vec = [0.059:0.0001:0.06];
+% alpha_u_vec = [0.04:0.002:0.06];
+% alpha_v_vec = [0.025:0.001:0.035];
 alpha_u_vec = [0.0595];
-% alpha_v_vec = [0.029];
-alpha_v_vec = [0.0];
+alpha_v_vec = [0.029,0.0];
 [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 [row,col] = size(alpha_v_mat);
 num_param = row*col;
@@ -255,6 +255,9 @@ ZFL_start = ZFL;
 % same for foreign firms)
 VB_HS_start = VB_HS;
 VB_HL_start = VB_HL;
+
+RTS_start = RTS;
+RTL_start = RTL;
 
 % Need to keep track of initial AR(1) component
 VZ_small_start = (log(RTS)-muT)/theta;
@@ -295,6 +298,10 @@ for itparam = 1:num_param
     % Re-initialize AR(1)-components (only for home firms)
     VZ_HS = repmat(VZ_small_start,ZHS_length,1);
     VZ_HL = repmat(VZ_large_start,ZHL_length,1);
+    
+    % Re-initialize comparative advantage
+    RTS = RTS_start;
+    RTL = RTL_start;
 
     aseed = 1;
     rng(aseed);
@@ -325,7 +332,11 @@ for itparam = 1:num_param
         
         % Keep track of AR(1) component
         VZ_HS = rho_v*VZ_HS + alpha_v*epsv_HS;
-        VZ_HL = rho_v*VZ_HL + alpha_v*epsv_HL;       
+        VZ_HL = rho_v*VZ_HL + alpha_v*epsv_HL;      
+        
+        % Evolution of comparative advantage
+        RTS = exp(log(RTS)+theta*(VB_HS(1,:)-VB_HS_old(1,:)));
+        RTL = exp(log(RTL)+theta*(VB_HL(1,:)-VB_HL_old(1,:)));
 
         % Evolution of productivity draws
         ZHS(~inactive_HS) = exp(VB_HS(~inactive_HS)+abs(log(ZHS(~inactive_HS))-VB_HS_old(~inactive_HS)+mu+alpha_u*epsu_HS(~inactive_HS)));
@@ -357,6 +368,14 @@ for itparam = 1:num_param
         TOP1_t(t,~small) = save_share_large{t}(1,:);
         TOP3_t(t,~small) = sum(save_share_large{t}(1:3,:));
     end
+    
+    % Granular residual
+    GAMMAFVEC_t = LAMBDAFVEC_t-PHIFVEC_t;
+    
+    % Time Differences
+    DELTA_LAMBDAFVEC_t = LAMBDAFVEC_t-repmat(LAMBDAFVEC_t(1,:),R_length,1);
+    DELTA_PHIFVEC_t = PHIFVEC_t-repmat(PHIFVEC_t(1,:),R_length,1);
+    DELTA_GAMMAFVEC_t = GAMMAFVEC_t-repmat(GAMMAFVEC_t(1,:),R_length,1);
     
 %     %%% Save Regression data for Stata
 %     ID = (1:S);
@@ -812,7 +831,71 @@ for itparam = 1:num_param
     DATA(29,itparam) = std(Delta(:));
     DATA(30,itparam) = std(Delta_f(:));
     
-    DATA(3:32,itparam) = DATA(1:30,itparam);
+    
+    % Moments 31 & 32 (same as 29 and 30 but in logs)
+    
+    clearvars small_shares small_shares_f
+    small_shares = zeros(T-1,0);
+    small_shares_f = zeros(T-1,0);
+    for z=1:Nsmall
+        clearvars small_shares1 small_shares2
+        % Indicator for being active in all periods
+        dim = size(DSHM_small);
+        idx_z_active = true(dim(1),1);
+        for t=1:T
+           idx_z_active = idx_z_active & (save_share_small{t}(:,z)>0);
+        end
+        % Indicator for belonging to the top 20% among all active firms in
+        % year 1
+        idx20 = save_share_small{1}(idx_z_active,z)>=quantile(save_share_small{1}(idx_z_active,z),0.8);
+        for t=1:T-1
+           int = log(save_share_small{t+1}(idx_z_active,z))-log(save_share_small{t}(idx_z_active,z));
+           int2 = int(idx20);
+           small_shares1(t,:) = int';
+           small_shares2(t,:) = int2';
+        end
+        % This is the target matrix that contains a matrix with T rows and
+        % where each column represents the development of one active firm
+        % in any sector over time
+        small_shares = [small_shares,small_shares1];
+        small_shares_f = [small_shares_f,small_shares2];
+    end
+    
+    clearvars large_shares large_shares_f
+    large_shares = zeros(T-1,0);
+    large_shares_f = zeros(T-1,0);
+    for z=1:Nlarge
+        clearvars large_shares1 large_shares2
+        dim = size(DSHM_large);
+        idx_z_active = true(dim(1),1);
+        for t=1:T
+           idx_z_active = idx_z_active & (save_share_large{t}(:,z)>0); 
+        end
+        idx20 = save_share_large{1}(idx_z_active,z)>=quantile(save_share_large{1}(idx_z_active,z),0.8);
+        for t=1:T-1
+           int = log(save_share_large{t+1}(idx_z_active,z))-log(save_share_large{t}(idx_z_active,z));
+           int2 = int(idx20);
+           large_shares1(t,:) = int';
+           large_shares2(t,:) = int2';
+        end
+        large_shares = [large_shares,large_shares1];
+        large_shares_f = [large_shares_f,large_shares2]; 
+    end
+    
+    Delta = [small_shares,large_shares];
+    Delta_f = [small_shares_f,large_shares_f];
+    
+    DATA(31,itparam) = std(Delta(:));
+    DATA(32,itparam) = std(Delta_f(:));
+    
+    % Moments 33 and 34 (granular contribution over 1 and 10 years)
+    
+    DATA(33,itparam) = var(DELTA_GAMMAFVEC_t(2,:))/var(DELTA_LAMBDAFVEC_t(2,:))*100;
+    DATA(34,itparam) = var(DELTA_GAMMAFVEC_t(11,:))/var(DELTA_LAMBDAFVEC_t(11,:))*100;
+    
+    % Put parameter vector on top of data matrix
+    
+    DATA(3:36,itparam) = DATA(1:34,itparam);
     DATA(1:2,itparam) = [alpha_v;alpha_u];
     
 %     % Compute Pareto-Shares
@@ -841,7 +924,7 @@ for itparam = 1:num_param
 %     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/alpha_v_zerow%d.csv',S);
+fname = sprintf('Results/Moments/robustness_grid%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 
