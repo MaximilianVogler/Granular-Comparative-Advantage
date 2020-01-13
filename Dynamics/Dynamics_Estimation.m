@@ -235,10 +235,10 @@ R_length = length(RECORD);
 T = RECORD(end);
 
 % Set up grid for nu and rho
-% alpha_u_vec = [0.04:0.002:0.06];
-% alpha_v_vec = [0.025:0.001:0.035];
-alpha_u_vec = [0.0595];
-alpha_v_vec = [0.029,0.0];
+% alpha_u_vec = [0.05:0.0001:0.051];
+% alpha_v_vec = [0.034:0.0001:0.035];
+alpha_u_vec = [0.0502];
+alpha_v_vec = [0.0342,0.0];
 [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 [row,col] = size(alpha_v_mat);
 num_param = row*col;
@@ -924,7 +924,7 @@ for itparam = 1:num_param
 %     plot(Rank,-theta/4*Rank)
 end
 
-fname = sprintf('Results/Moments/robustness_grid%d.csv',S);
+fname = sprintf('Results/Moments/search_grid3%d.csv',S);
 TTT = cell2table(num2cell(DATA));
 writetable(TTT,fname);
 

@@ -5,7 +5,7 @@
 
 *Import Data
 clear all
-cd "/Users/Maximilian/Documents/Princeton/RA Itskhoki/Itskhoki and Gaubert (2018)/Clean Code/Dynamics/Results/Calibrating_Graphs3"
+cd "/Users/Maximilian/Documents/Princeton/RA Itskhoki/Itskhoki and Gaubert (2018)/Clean Code/Dynamics/Results/Calibrating_Graphs7"
 * import delimited calibrated_regdata_357
 import delimited calibrated_regdata_BC_9996
 

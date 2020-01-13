@@ -243,8 +243,8 @@ T = RECORD(end);
 % Set up grid for nu and rho
 % alpha_u_vec = [0.0595,0,0.0595];
 % alpha_v_vec = [0.029,0.029,0];
-alpha_u_vec = 0.055;
-alpha_v_vec = 0.0315;
+alpha_u_vec = 0.0595;
+alpha_v_vec = 0.029;
 % [alpha_v_mat,alpha_u_mat] = meshgrid(alpha_v_vec,alpha_u_vec); 
 % [row,col] = size(alpha_v_mat);
 % num_param = row*col;
@@ -475,8 +475,8 @@ for itparam = 1:num_param
         ID = repmat(ID,R_length,1);
         YEAR = repmat(RECORD',S,1);
         DATA1 = [ID(:),YEAR,XVEC_t(:),DVEC_t(:),TOP1_t(:),TOP3_t(:)];
-        fname = sprintf('Results/Calibrating_Graphs7/calibrated_regdata_BC_%d',S);
-        fname2 = sprintf('Results/Calibrating_Graphs7/calibrated_regdata_BC_%d.csv',S);
+        fname = sprintf('Results/Calibrating_Graphs6/calibrated_regdata_BC_%d',S);
+        fname2 = sprintf('Results/Calibrating_Graphs6/calibrated_regdata_BC_%d.csv',S);
         save(fname,'DATA1');
         title1 = {'ID','Year','X','D','TOP1','TOP3'};
         TT = cell2table(num2cell(DATA1),'VariableNames',title1); 
@@ -500,7 +500,7 @@ for itparam = 1:num_param
         LPCT0 = LPCT;
         LPCT0(5)=0;
         set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-        ffname = sprintf('Results/Calibrating_Graphs7/mean_reversion_BC%d.png',itparam);
+        ffname = sprintf('Results/Calibrating_Graphs6/mean_reversion_BC%d.png',itparam);
         saveas(gcf,ffname)
         
         % Plot volatility graph
@@ -512,14 +512,14 @@ for itparam = 1:num_param
         set(gca,'FontSize',16)
         set(gca,'xtick',[0.5:1:9.5 10.55])
         set(gca,'xticklabel',[{ -1} round(LPCT0(1:4)'*100)/100 {  0} {  0} round(LPCT0(7:end)'*100)/100 1])
-        ffname = sprintf('Results/Calibrating_Graphs7/volatility_BC%d.png',itparam);
+        ffname = sprintf('Results/Calibrating_Graphs6/volatility_BC%d.png',itparam);
         saveas(gcf,ffname)
     end
     
 end
 
 % Save Moments
-fname = sprintf('Results/Calibrating_Graphs7/turnover_ANOVA_BC.csv');
+fname = sprintf('Results/Calibrating_Graphs6/turnover_ANOVA_BC.csv');
 TTT = cell2table(num2cell(mom));
 writetable(TTT,fname);
         
@@ -532,7 +532,7 @@ lgd = legend([MM2(1),MM5(1)],'50 years','20 years');
 set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
 ylabel('Expected change in export share, $\Delta \Lambda_z^\ast$','interpreter','latex','fontsize',20)
 xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ffname = sprintf('Results/Calibrating_Graphs7/combined_mean_reversion_BC.png');
+ffname = sprintf('Results/Calibrating_Graphs6/combined_mean_reversion_BC.png');
 saveas(gcf,ffname)
 
 figure(6)
@@ -541,5 +541,5 @@ VOL1 = bar(VOL_10_SAVE,'FaceColor','[0, 0.4470, 0.7410]','FaceAlpha',0.33);
 % set(lgd,'box','off','location','northeast','interpreter','latex','fontsize',20)
 ylabel('Variation in export share, $\mathrm{std}(\Delta \Lambda_z^\ast)$','interpreter','latex','fontsize',20)
 xlabel('Deciles of sectors, by granular $\Gamma_z^\ast$','interpreter','latex','fontsize',20)
-ffname = sprintf('Results/Calibrating_Graphs7/combined_volatility_BC.png');
+ffname = sprintf('Results/Calibrating_Graphs6/combined_volatility_BC.png');
 saveas(gcf,ffname)
